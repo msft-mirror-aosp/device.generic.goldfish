@@ -121,7 +121,7 @@ int64_t HwCamera::getStallFrameDurationNs() const {
 }
 
 int32_t HwCamera::getSensorOrientation() const {
-    return 0;
+    return 90;
 }
 
 float HwCamera::getSensorDPI() const {
@@ -129,7 +129,7 @@ float HwCamera::getSensorDPI() const {
 }
 
 std::pair<int32_t, int32_t> HwCamera::getSensorSensitivityRange() const {
-    return {kDefaultSensorSensitivity, kDefaultSensorSensitivity};
+    return {kDefaultSensorSensitivity / 4, kDefaultSensorSensitivity * 8};
 }
 
 float HwCamera::getDefaultAperture() const {
