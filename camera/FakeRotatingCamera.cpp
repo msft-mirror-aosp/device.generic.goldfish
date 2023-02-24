@@ -56,13 +56,14 @@ using base::unique_fd;
 namespace {
 constexpr char kClass[] = "FakeRotatingCamera";
 
-constexpr int kMaxFPS = 30;
 constexpr int kMinFPS = 2;
+constexpr int kMedFPS = 15;
+constexpr int kMaxFPS = 30;
 constexpr int64_t kOneSecondNs = 1000000000;
 
 constexpr int64_t kMinFrameDurationNs = kOneSecondNs / kMaxFPS;
 constexpr int64_t kMaxFrameDurationNs = kOneSecondNs / kMinFPS;
-constexpr int64_t kDefaultFrameDurationNs = kMinFrameDurationNs;
+constexpr int64_t kDefaultFrameDurationNs = kOneSecondNs / kMedFPS;
 
 constexpr int64_t kDefaultSensorExposureTimeNs = kOneSecondNs / 100;
 constexpr int64_t kMinSensorExposureTimeNs = kDefaultSensorExposureTimeNs / 100;
@@ -799,14 +800,11 @@ bool FakeRotatingCamera::readSensors(SensorValues* vals) {
 CameraMetadata FakeRotatingCamera::applyMetadata(const CameraMetadata& metadata) {
     const camera_metadata_t* const raw =
         reinterpret_cast<const camera_metadata_t*>(metadata.metadata.data());
+
+    mFrameDurationNs = getFrameDuration(raw, kDefaultFrameDurationNs,
+                                        kMinFrameDurationNs, kMaxFrameDurationNs);
+
     camera_metadata_ro_entry_t entry;
-
-    if (find_camera_metadata_ro_entry(raw, ANDROID_SENSOR_FRAME_DURATION, &entry)) {
-        mFrameDurationNs = kDefaultFrameDurationNs;
-    } else {
-        mFrameDurationNs = entry.data.i64[0];
-    }
-
     const camera_metadata_enum_android_control_af_mode_t afMode =
         find_camera_metadata_ro_entry(raw, ANDROID_CONTROL_AF_MODE, &entry) ?
             ANDROID_CONTROL_AF_MODE_OFF :
@@ -897,7 +895,10 @@ CameraMetadata FakeRotatingCamera::updateCaptureResultMetadata() {
 ////////////////////////////////////////////////////////////////////////////////
 
 Span<const std::pair<int32_t, int32_t>> FakeRotatingCamera::getTargetFpsRanges() const {
+    // ordered to satisfy testPreviewFpsRangeByCamera
     static const std::pair<int32_t, int32_t> targetFpsRanges[] = {
+        {kMinFPS, kMedFPS},
+        {kMedFPS, kMedFPS},
         {kMinFPS, kMaxFPS},
         {kMaxFPS, kMaxFPS},
     };
