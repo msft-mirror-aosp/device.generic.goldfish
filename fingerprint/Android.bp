@@ -37,11 +37,14 @@ cc_binary {
         "libbase",
         "libbinder_ndk",
         "liblog",
-        "android.hardware.biometrics.fingerprint-V2-ndk",
-        "android.hardware.biometrics.common-V2-ndk",
+        "android.hardware.biometrics.fingerprint-V3-ndk",
+        "android.hardware.biometrics.common-V3-ndk",
     ],
     static_libs: [
         "libqemud.ranchu",
+    ],
+    header_libs: [
+        "libutils_headers",
     ],
     cflags: [
         "-DLOG_TAG=\"fingerprint-service.ranchu\"",

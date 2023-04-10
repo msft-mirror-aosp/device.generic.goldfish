@@ -21,6 +21,9 @@ on early-init
     setprop debug.hwui.renderer ${ro.boot.debug.hwui.renderer:-opengl}
     setprop debug.stagefright.ccodec ${ro.boot.debug.stagefright.ccodec}
     setprop debug.sf.nobootanimation ${ro.boot.debug.sf.nobootanimation}
+    setprop vendor.qemu.dev.bootcomplete 0
+
+    start vendor.dlkm_loader
 
 on init
     # set RLIMIT_MEMLOCK to 8MB for BPF network statistics
@@ -77,6 +80,13 @@ on boot
     # Create an unused USB gadget to allow sysfs testing
     mkdir /config/usb_gadget/g1 0770 root root
 
+service vendor.dlkm_loader /vendor/bin/dlkm_loader
+    class main
+    user root
+    group root system
+    disabled
+    oneshot
+
 service ranchu-setup /vendor/bin/init.ranchu-core.sh
     user root
     group root
@@ -96,7 +106,7 @@ on property:vendor.qemu.vport.gnss=*
 on property:vendor.qemu.timezone=*
     setprop persist.sys.timezone ${vendor.qemu.timezone}
 
-on property:dev.bootcomplete=1
+on property:dev.bootcomplete=1 && property:vendor.qemu.dev.bootcomplete=0
     setprop vendor.qemu.dev.bootcomplete 1
     start qemu-props-bootcomplete
     start ranchu-setup
