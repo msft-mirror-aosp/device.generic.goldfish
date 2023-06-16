@@ -35,7 +35,7 @@
 #undef EGL_EGLEXT_PROTOTYPES
 #undef GL_GLEXT_PROTOTYPES
 
-#include "acircles_pattern_1280_720.h"
+#include "acircles_pattern_512_512.h"
 #include "converters.h"
 #include "debug.h"
 #include "FakeRotatingCamera.h"
@@ -89,33 +89,6 @@ constexpr uint32_t toR8G8B8A8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 
 constexpr double degrees2rad(const double degrees) {
     return degrees * M_PI / 180.0;
-}
-
-std::tuple<float, float, float> getFrustumParams() {
-    constexpr float defaultAngle = degrees2rad(48);
-    constexpr float defaultNear = 1;
-    constexpr float defaultFar = 10;
-
-    std::string valueStr =
-        base::GetProperty("vendor.qemu.FakeRotatingCamera.frustum", "");
-    float angle, near, far;
-    if (valueStr.empty()) {
-        goto returnDefault;
-    } else if (sscanf(valueStr.c_str(), "%g,%g,%g", &angle, &near, &far) == 3) {
-        near = std::max(near, defaultNear);
-        far = std::min(std::max(far, 3 * near), 100 * near);
-    } else if (sscanf(valueStr.c_str(), "%g", &angle) == 1) {
-        near = defaultNear;
-        far = defaultFar;
-    } else {
-        goto returnDefault;
-    }
-
-    angle = degrees2rad(std::min(std::max(angle, 1.0f), 160.0f));
-    return {angle, near, far};
-
-returnDefault:
-    return {defaultAngle, defaultNear, defaultFar};
 }
 
 // This texture is useful to debug camera orientation and image aspect ratio
@@ -180,20 +153,37 @@ abc3d::AutoTexture loadTestPatternTextureColors() {
 
 // This texture is used to pass CtsVerifier
 abc3d::AutoTexture loadTestPatternTextureAcircles() {
-    constexpr uint16_t kBackground = toR5G6B5(.4, .4, .4);
+    constexpr uint16_t kPalette[] = {
+        toR5G6B5(0, 0, 0),
+        toR5G6B5(.25, .25, .25),
+        toR5G6B5(.5, .5, .5),
+        toR5G6B5(1, 1, 0),
+        toR5G6B5(1, 1, 1),
+    };
 
-    std::vector<uint16_t> texels(kAcirclesPatternWidth * kAcirclesPatternWidth,
-                                 kBackground);
+    std::vector<uint16_t> texels;
+    texels.reserve(kAcirclesPatternWidth * kAcirclesPatternWidth);
 
-    const uint8_t* y = kAcirclesPattern;  // ignore cbcr for now
-    for (size_t row = kAcirclesPatternHeight; row > 0; --row) {
-        for (size_t col = kAcirclesPatternWidth; col > 0; --col, ++y) {
-            const float v = *y / 255.0;
-            const uint16_t rgb16 = toR5G6B5(v, v, v);
-            texels[(kAcirclesPatternWidth - 1 - col) * kAcirclesPatternWidth +
-                   row + (kAcirclesPatternWidth - kAcirclesPatternHeight) / 2] =
-                       rgb16;
+    auto i = std::begin(kAcirclesPatternRLE);
+    const auto end = std::end(kAcirclesPatternRLE);
+    while (i < end) {
+        const unsigned x = *i;
+        ++i;
+        unsigned n;
+        uint16_t color;
+        if (x & 1) {
+            n = (x >> 3) + 1;
+            color = kPalette[(x >> 1) & 3];
+        } else {
+            if (x & 2) {
+                n = ((unsigned(*i) << 6) | (x >> 2)) + 1;
+                ++i;
+            } else {
+                n = (x >> 2) + 1;
+            }
+            color = kPalette[4];
         }
+        texels.insert(texels.end(), n, color);
     }
 
     abc3d::AutoTexture tex(GL_TEXTURE_2D, GL_RGB,
@@ -462,9 +452,6 @@ FakeRotatingCamera::processCaptureRequest(CameraMetadata metadataUpdate,
 
     RenderParams renderParams;
     {
-        auto& fr = renderParams.cameraParams.frustum;
-        std::tie(fr.angle, fr.near, fr.far) = getFrustumParams();
-
         SensorValues sensorValues;
         if (readSensors(&sensorValues)) {
             static_assert(sizeof(renderParams.cameraParams.rotXYZ3) ==
@@ -672,11 +659,15 @@ bool FakeRotatingCamera::drawScene(const Rect<uint16_t> imageSize,
         };
 
         {
-            const auto& frustum = renderParams.cameraParams.frustum;
-            const double right = frustum.near * tan(.5 * frustum.angle);
+            constexpr double kNear = 1.0;
+            constexpr double kFar = 10.0;
+
+            // We use `height` to calculate `right` because the image is 90degrees
+            // rotated (sensorOrientation=90).
+            const double right = kNear * (.5 * getSensorSize().height / getSensorDPI() / getDefaultFocalLength());
             const double top = right / imageSize.width * imageSize.height;
             abc3d::frustum(pvMatrix44, -right, right, -top, top,
-                           frustum.near, frustum.far);
+                           kNear, kFar);
         }
 
         abc3d::mulM44(projectionMatrix44, pvMatrix44, workaroundMatrix44);
@@ -984,6 +975,10 @@ int64_t FakeRotatingCamera::getDefaultSensorExpTime() const {
 
 int64_t FakeRotatingCamera::getDefaultSensorFrameDuration() const {
     return kMinFrameDurationNs;
+}
+
+float FakeRotatingCamera::getDefaultFocalLength() const {
+    return 2.8;
 }
 
 }  // namespace hw
