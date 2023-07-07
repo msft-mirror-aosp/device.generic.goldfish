@@ -138,7 +138,7 @@ struct TinyalsaSource : public DevicePortSource {
                 bytesToRead -= writeBufSzBytes;
                 mSentFrames += writeBufSzBytes / mFrameSize;
             } else {
-                ALOGW("TinyalsaSource::%s:%d pcm_read was late delivering "
+                ALOGD("TinyalsaSource::%s:%d pcm_read was late delivering "
                       "frames, inserting %zu us of silence",
                       __func__, __LINE__,
                       size_t(1000000 * bytesToRead / mFrameSize / mSampleRateHz));
@@ -162,7 +162,7 @@ struct TinyalsaSource : public DevicePortSource {
     }
 
     void producerThread() {
-        util::setThreadPriority(PRIORITY_URGENT_AUDIO);
+        util::setThreadPriority(SP_AUDIO_SYS, PRIORITY_AUDIO);
         std::vector<uint8_t> readBuf(mReadSizeFrames * mFrameSize);
 
         while (mProduceThreadRunning) {
