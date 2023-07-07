@@ -20,6 +20,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <random>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -93,16 +94,19 @@ private:
     bool isSensorActive(int sensorHandle) const {
         return m_activeSensorsMask & (1u << sensorHandle);  // m_mtx required
     }
+    Event activationOnChangeSensorEvent(int32_t sensorHandle, const SensorInfo& sensor) const;
     static bool activateQemuSensorImpl(int pipe, int sensorHandle, bool enabled);
     bool setAllQemuSensors(bool enabled);
-    void parseQemuSensorEvent(const int pipe, QemuSensorsProtocolState* state);
-    void postSensorEvent(const Event& event);
+    void parseQemuSensorEventLocked(const int pipe, QemuSensorsProtocolState* state);
+    void postSensorEventLocked(const Event& event);
     void doPostSensorEventLocked(const SensorInfo& sensor, const Event& event);
     void setAdditionalInfoFrames();
     void sendAdditionalInfoReport(int sensorHandle);
 
     void qemuSensorListenerThread();
     void batchThread();
+
+    double randomError(float lo, float hi);
 
     static constexpr char kCMD_QUIT = 'q';
     bool qemuSensorThreadSendCommand(char cmd) const;
@@ -140,6 +144,7 @@ private:
         int         generation = 0;
     };
 
+    QemuSensorsProtocolState                m_protocolState;
     std::priority_queue<BatchEventRef>      m_batchQueue;
     std::vector<BatchInfo>                  m_batchInfo;
     std::condition_variable                 m_batchUpdated;
@@ -147,6 +152,9 @@ private:
     std::atomic<bool>                       m_batchRunning = true;
 
     mutable std::mutex                      m_mtx;
+
+    std::random_device rd;
+    std::mt19937 gen = std::mt19937(rd());
 };
 
 }  // namespace goldfish
