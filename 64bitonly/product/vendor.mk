@@ -62,8 +62,6 @@ PRODUCT_PACKAGES += \
     qemu-export-property \
     qemu-props \
     stagefright \
-    android.hardware.graphics.allocator@3.0-service.ranchu \
-    android.hardware.graphics.mapper@3.0-impl-ranchu \
     android.hardware.graphics.composer3-service.ranchu \
     toybox_vendor \
     android.hardware.wifi-service \
@@ -79,6 +77,19 @@ PRODUCT_PACKAGES += \
     MultiDisplayProvider \
     libGoldfishProfiler \
     dlkm_loader
+
+ifneq ($(filter %_minigbm, $(TARGET_PRODUCT)),)
+PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=minigbm
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.allocator-service.minigbm \
+    android.hardware.graphics.mapper@4.0-impl.minigbm \
+    mapper.minigbm
+else
+PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.allocator@3.0-service.ranchu \
+    android.hardware.graphics.mapper@3.0-impl-ranchu
+endif
 
 ifneq ($(EMULATOR_DISABLE_RADIO),true)
 PRODUCT_PACKAGES += \
@@ -137,6 +148,9 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     DisplayCutoutEmulationEmu01Overlay \
+    EmulationPixelFoldOverlay \
+    GoldfishSkinConfig \
+    SystemUIEmulationPixelFoldOverlay \
     EmulationPixel7ProOverlay \
     SystemUIEmulationPixel7ProOverlay \
     EmulationPixel7Overlay \
@@ -295,6 +309,9 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/display_settings_app_compat.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_app_compat.xml \
     device/generic/goldfish/display_settings_freeform.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_freeform.xml \
     device/generic/goldfish/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
+    device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
+    device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
+    device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
     device/generic/goldfish/data/etc/config.ini:config.ini \
     device/generic/goldfish/wifi/wpa_supplicant.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant.conf \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \
@@ -308,7 +325,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
     frameworks/native/data/etc/android.hardware.vulkan.level-1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.level.xml \
     frameworks/native/data/etc/android.hardware.vulkan.compute-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.compute.xml \
-    frameworks/native/data/etc/android.hardware.vulkan.version-1_1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version.xml \
+    frameworks/native/data/etc/android.hardware.vulkan.version-1_3.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version.xml \
     frameworks/native/data/etc/android.software.vulkan.deqp.level-2023-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.vulkan.deqp.level.xml \
     frameworks/native/data/etc/android.software.opengles.deqp.level-2023-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.opengles.deqp.level.xml \
     frameworks/native/data/etc/android.software.autofill.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.autofill.xml \
