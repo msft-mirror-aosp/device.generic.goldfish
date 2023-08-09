@@ -31,8 +31,8 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.control_privapp_permissions=enforce \
     ro.crypto.volume.filenames_mode=aes-256-cts \
     ro.hardware.audio.tinyalsa.period_count=4 \
-    ro.hardware.audio.tinyalsa.period_size_multiplier=4 \
-    ro.hardware.audio.tinyalsa.host_latency_ms=30 \
+    ro.hardware.audio.tinyalsa.period_size_multiplier=2 \
+    ro.hardware.audio.tinyalsa.host_latency_ms=80 \
     ro.hardware.power=ranchu \
     ro.hardware.vulkan=ranchu \
     ro.incremental.enable=yes \
@@ -62,8 +62,6 @@ PRODUCT_PACKAGES += \
     qemu-export-property \
     qemu-props \
     stagefright \
-    android.hardware.graphics.allocator@3.0-service.ranchu \
-    android.hardware.graphics.mapper@3.0-impl-ranchu \
     android.hardware.graphics.composer3-service.ranchu \
     toybox_vendor \
     android.hardware.wifi-service \
@@ -79,6 +77,19 @@ PRODUCT_PACKAGES += \
     MultiDisplayProvider \
     libGoldfishProfiler \
     dlkm_loader
+
+ifneq ($(filter %_minigbm, $(TARGET_PRODUCT)),)
+PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=minigbm
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.allocator-service.minigbm \
+    android.hardware.graphics.mapper@4.0-impl.minigbm \
+    mapper.minigbm
+else
+PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.allocator@3.0-service.ranchu \
+    android.hardware.graphics.mapper@3.0-impl-ranchu
+endif
 
 ifneq ($(EMULATOR_DISABLE_RADIO),true)
 PRODUCT_PACKAGES += \
@@ -303,7 +314,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
     frameworks/native/data/etc/android.hardware.vulkan.level-1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.level.xml \
     frameworks/native/data/etc/android.hardware.vulkan.compute-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.compute.xml \
-    frameworks/native/data/etc/android.hardware.vulkan.version-1_1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version.xml \
+    frameworks/native/data/etc/android.hardware.vulkan.version-1_3.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version.xml \
     frameworks/native/data/etc/android.software.vulkan.deqp.level-2023-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.vulkan.deqp.level.xml \
     frameworks/native/data/etc/android.software.opengles.deqp.level-2023-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.opengles.deqp.level.xml \
     frameworks/native/data/etc/android.software.autofill.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.autofill.xml \
