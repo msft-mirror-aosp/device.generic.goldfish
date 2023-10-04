@@ -31,8 +31,8 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.control_privapp_permissions=enforce \
     ro.crypto.volume.filenames_mode=aes-256-cts \
     ro.hardware.audio.tinyalsa.period_count=4 \
-    ro.hardware.audio.tinyalsa.period_size_multiplier=4 \
-    ro.hardware.audio.tinyalsa.host_latency_ms=30 \
+    ro.hardware.audio.tinyalsa.period_size_multiplier=2 \
+    ro.hardware.audio.tinyalsa.host_latency_ms=80 \
     ro.hardware.power=ranchu \
     ro.hardware.vulkan=ranchu \
     ro.incremental.enable=yes \
@@ -234,16 +234,14 @@ PRODUCT_PACKAGES += \
 # "Hello, world!" HAL implementations, mostly for compliance
 PRODUCT_PACKAGES += \
     android.hardware.atrace@1.0-service \
-    android.hardware.authsecret-service.example \
+    com.android.hardware.authsecret \
     android.hardware.contexthub-service.example \
     android.hardware.dumpstate-service.example \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
     android.hardware.identity-service.example \
     android.hardware.lights-service.example \
-    android.hardware.neuralnetworks-shim-service-sample \
-    android.hardware.neuralnetworks-service-sample-all \
-    android.hardware.neuralnetworks-service-sample-limited \
+    com.android.hardware.neuralnetworks \
     android.hardware.power-service.example \
     android.hardware.power.stats-service.example \
     android.hardware.rebootescrow-service.default \
