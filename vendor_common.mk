@@ -27,6 +27,11 @@ PRODUCT_SOONG_NAMESPACES += \
     device/generic/goldfish \
     device/generic/goldfish-opengl
 
+# RKPD
+PRODUCT_PRODUCT_PROPERTIES += \
+    remote_provisioning.enable_rkpd=true \
+    remote_provisioning.hostname=remoteprovisioning.googleapis.com
+
 PRODUCT_VENDOR_PROPERTIES += \
     ro.control_privapp_permissions=enforce \
     ro.crypto.volume.filenames_mode=aes-256-cts \
@@ -34,7 +39,6 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.hardware.audio.tinyalsa.period_size_multiplier=2 \
     ro.hardware.audio.tinyalsa.host_latency_ms=80 \
     ro.hardware.power=ranchu \
-    ro.hardware.vulkan=ranchu \
     ro.incremental.enable=yes \
     ro.logd.size=1M \
     ro.kernel.qemu=1 \
