@@ -15,7 +15,7 @@
 
 PRODUCT_COPY_FILES += device/generic/goldfish/pc/config.ini.pc:config.ini
 
-$(call inherit-product, $(SRC_TARGET_DIR)/product/sdk_x86_64.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/sdk_phone_x86_64.mk)
 
 PRODUCT_NAME := sdk_pc_x86_64
 PRODUCT_DEVICE := emulator64_x86_64
@@ -23,5 +23,6 @@ PRODUCT_BRAND := Android
 PRODUCT_MODEL := PC on x86_64 emulator
 PRODUCT_PACKAGE_OVERLAYS := device/generic/goldfish/pc/overlay
 PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/pc_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/pc_core_hardware.xml \
     device/generic/goldfish/pc/data/etc/pc.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/pc.xml
 PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := device/generic/goldfish/pc/images_source.prop_template
