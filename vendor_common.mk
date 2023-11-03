@@ -50,7 +50,6 @@ PRODUCT_VENDOR_PROPERTIES += \
     debug.sf.vsync_reactor_ignore_present_fences=true \
     debug.stagefright.c2inputsurface=-1 \
     debug.stagefright.ccodec=4 \
-    graphics.gpu.profiler.support=true \
     persist.sys.zram_enabled=1 \
     wifi.direct.interface=p2p-dev-wlan0 \
     wifi.interface=wlan0 \
@@ -155,10 +154,16 @@ PRODUCT_PACKAGES += \
     DisplayCutoutEmulationEmu01Overlay \
     EmulationPixelFoldOverlay \
     SystemUIEmulationPixelFoldOverlay \
+    EmulationPixel8ProOverlay \
+    SystemUIEmulationPixel8ProOverlay \
+    EmulationPixel8Overlay \
+    SystemUIEmulationPixel8Overlay \
     EmulationPixel7ProOverlay \
     SystemUIEmulationPixel7ProOverlay \
     EmulationPixel7Overlay \
     SystemUIEmulationPixel7Overlay \
+    EmulationPixel7aOverlay \
+    SystemUIEmulationPixel7aOverlay \
     EmulationPixel6ProOverlay \
     SystemUIEmulationPixel6ProOverlay \
     EmulationPixel6Overlay \
@@ -216,7 +221,6 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/camera/media/codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml \
     device/generic/goldfish/camera/media/codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml \
     device/generic/goldfish/camera/media/codecs_performance_c2.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance_c2.xml \
-    frameworks/native/data/etc/android.hardware.camera.ar.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.ar.xml \
     frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.flash-autofocus.xml \
     frameworks/native/data/etc/android.hardware.camera.concurrent.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.concurrent.xml \
     frameworks/native/data/etc/android.hardware.camera.front.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.front.xml \
@@ -334,9 +338,12 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.autofill.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.autofill.xml \
     frameworks/native/data/etc/android.software.verified_boot.xml:${TARGET_COPY_OUT_PRODUCT}/etc/permissions/android.software.verified_boot.xml \
     device/generic/goldfish/data/etc/permissions/privapp-permissions-goldfish.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-goldfish.xml \
+    device/generic/goldfish/data/etc/permissions/privapp-permissions-multidisplay.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/privapp-permissions-multidisplay.xml \
 
+ifneq ($(EMULATOR_DISABLE_RADIO),true)
 # Android TV ingests this file, but declares its own set of hardware permissions.
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
     PRODUCT_COPY_FILES+= \
         device/generic/goldfish/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml
+endif
 endif
