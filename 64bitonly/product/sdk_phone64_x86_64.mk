@@ -16,8 +16,8 @@
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 # 1.5G + 8M
-BOARD_SUPER_PARTITION_SIZE := 1619001344
-BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE := 1610612736
+BOARD_SUPER_PARTITION_SIZE ?= 1619001344
+BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= 1610612736
 
 #
 # All components inherited here go to system image
@@ -52,7 +52,6 @@ PRODUCT_PACKAGES += \
 #
 $(call inherit-product, device/generic/goldfish/64bitonly/product/x86_64-vendor.mk)
 $(call inherit-product, device/generic/goldfish/64bitonly/product/emulator64_vendor.mk)
-$(call inherit-product, device/generic/goldfish/emu64x/device.mk)
 
 # Overrides
 PRODUCT_BRAND := Android
