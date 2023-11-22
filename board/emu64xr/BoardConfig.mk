@@ -1,5 +1,4 @@
-#
-# Copyright (C) 2018 The Android Open Source Project
+# Copyright (C) 2022 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,5 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-$(call inherit-product, device/generic/goldfish/product/generic.mk)
+# x86_64 emulator specific definitions
+TARGET_CPU_ABI := x86_64
+TARGET_ARCH := x86_64
+TARGET_ARCH_VARIANT := x86_64
+TARGET_2ND_ARCH_VARIANT := x86_64
+
+TARGET_NATIVE_BRIDGE_ARCH := riscv64
+TARGET_NATIVE_BRIDGE_ARCH_VARIANT := 
+TARGET_NATIVE_BRIDGE_CPU_VARIANT := generic
+TARGET_NATIVE_BRIDGE_ABI := riscv64
+
+include device/generic/goldfish/board/BoardConfigCommon.mk
+
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 576716800
