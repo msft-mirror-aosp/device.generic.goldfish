@@ -32,6 +32,8 @@ namespace provider {
 namespace implementation {
 namespace {
 const uint32_t kExtraResultKeys[] = {
+    ANDROID_COLOR_CORRECTION_GAINS,
+    ANDROID_COLOR_CORRECTION_TRANSFORM,
     ANDROID_CONTROL_AE_STATE,
     ANDROID_CONTROL_AF_STATE,
     ANDROID_CONTROL_AWB_STATE,
@@ -42,7 +44,9 @@ const uint32_t kExtraResultKeys[] = {
     ANDROID_SENSOR_TIMESTAMP, // populate with zero, CameraDeviceSession will put an actual value
     ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
     ANDROID_SENSOR_NEUTRAL_COLOR_POINT,
+    ANDROID_SENSOR_NOISE_PROFILE,
     ANDROID_STATISTICS_SCENE_FLICKER,
+    ANDROID_STATISTICS_LENS_SHADING_MAP,
 };
 
 std::vector<uint32_t> getSortedKeys(const CameraMetadataMap& m) {
@@ -201,6 +205,8 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
             float(mHwCamera->getMinimumFocusDistance());
         m[ANDROID_LENS_INFO_FOCUS_DISTANCE_CALIBRATION] =
             uint8_t(ANDROID_LENS_INFO_FOCUS_DISTANCE_CALIBRATION_APPROXIMATE);
+        // system/media/camera/docs/docs.html#dynamic_android.statistics.lensShadingMap
+        m[ANDROID_LENS_INFO_SHADING_MAP_SIZE].add<int32_t>(4).add<int32_t>(3);
     }
     {   // ANDROID_NOISE_REDUCTION_...
         m[ANDROID_NOISE_REDUCTION_AVAILABLE_NOISE_REDUCTION_MODES]
@@ -358,7 +364,8 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
     }
     {   // ANDROID_SHADING_...
         m[ANDROID_SHADING_AVAILABLE_MODES]
-            .add<uint8_t>(ANDROID_SHADING_MODE_OFF);
+            .add<uint8_t>(ANDROID_SHADING_MODE_OFF)
+            .add<uint8_t>(ANDROID_SHADING_MODE_FAST);
     }
     {   // ANDROID_STATISTICS_...
         m[ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES]
@@ -470,6 +477,8 @@ CameraMetadataMap CameraDevice::constructDefaultRequestSettings(const RequestTem
 
     CameraMetadataMap m;
 
+    m[ANDROID_COLOR_CORRECTION_MODE] =
+        uint8_t(ANDROID_COLOR_CORRECTION_MODE_FAST);
     m[ANDROID_COLOR_CORRECTION_ABERRATION_MODE] =
         uint8_t(ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF);
     m[ANDROID_CONTROL_AE_ANTIBANDING_MODE] =
@@ -529,6 +538,8 @@ CameraMetadataMap CameraDevice::constructDefaultRequestSettings(const RequestTem
     m[ANDROID_SENSOR_EXPOSURE_TIME] = int64_t(mHwCamera->getDefaultSensorExpTime());
     m[ANDROID_SENSOR_FRAME_DURATION] = int64_t(mHwCamera->getDefaultSensorFrameDuration());
     m[ANDROID_SENSOR_SENSITIVITY] = int32_t(mHwCamera->getDefaultSensorSensitivity());
+
+    m[ANDROID_SHADING_MODE] = uint8_t(ANDROID_SHADING_MODE_OFF);
 
     m[ANDROID_STATISTICS_FACE_DETECT_MODE] =
         uint8_t(ANDROID_STATISTICS_FACE_DETECT_MODE_OFF);
