@@ -41,6 +41,7 @@ const uint32_t kExtraResultKeys[] = {
     ANDROID_REQUEST_PIPELINE_DEPTH,
     ANDROID_SENSOR_TIMESTAMP, // populate with zero, CameraDeviceSession will put an actual value
     ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
+    ANDROID_SENSOR_NEUTRAL_COLOR_POINT,
     ANDROID_STATISTICS_SCENE_FLICKER,
 };
 
@@ -131,7 +132,7 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
         m[ANDROID_CONTROL_MAX_REGIONS]
             .add<int32_t>(0)    // AE
             .add<int32_t>(0)    // AWB
-            .add<int32_t>(0);   // AF
+            .add<int32_t>(1);   // AF
         m[ANDROID_CONTROL_AE_LOCK_AVAILABLE] =
             uint8_t(ANDROID_CONTROL_AE_LOCK_AVAILABLE_FALSE);
         m[ANDROID_CONTROL_AWB_LOCK_AVAILABLE] =
@@ -268,6 +269,43 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
     {   // ANDROID_SENSOR_...
         m[ANDROID_SENSOR_ORIENTATION] =
             int32_t(mHwCamera->getSensorOrientation());
+        m[ANDROID_SENSOR_BLACK_LEVEL_PATTERN]
+            .add<int32_t>(64).add<int32_t>(64).add<int32_t>(64).add<int32_t>(64);
+        m[ANDROID_SENSOR_REFERENCE_ILLUMINANT1] =
+            uint8_t(ANDROID_SENSOR_REFERENCE_ILLUMINANT1_D50);
+        {
+            const camera_metadata_rational_t zero = {
+                .numerator = 0, .denominator = 128
+            };
+            const camera_metadata_rational_t one = {
+                .numerator = 128, .denominator = 128
+            };
+
+            m[ANDROID_SENSOR_CALIBRATION_TRANSFORM1]
+                .add(one).add(zero).add(zero)
+                .add(zero).add(one).add(zero)
+                .add(zero).add(zero).add(one);
+        }
+        {
+            const auto R1024 = [](int n){
+                return camera_metadata_rational_t{
+                    .numerator = n, .denominator = 1024
+                };
+            };
+
+            // The values are borrowed from
+            // https://android.googlesource.com/platform/hardware/google/camera/+/refs/heads/main/devices/EmulatedCamera/hwl/configs/emu_camera_back.json
+            m[ANDROID_SENSOR_COLOR_TRANSFORM1]
+                .add(R1024(3209)).add(R1024(-1655)).add(R1024(-502))
+                .add(R1024(-1002)).add(R1024(1962)).add(R1024(34))
+                .add(R1024(73)).add(R1024(-234)).add(R1024(1438));
+
+            m[ANDROID_SENSOR_FORWARD_MATRIX1]
+                .add(R1024(446)).add(R1024(394)).add(R1024(146))
+                .add(R1024(227)).add(R1024(734)).add(R1024(62))
+                .add(R1024(14)).add(R1024(99)).add(R1024(731));
+        }
+
         m[ANDROID_SENSOR_AVAILABLE_TEST_PATTERN_MODES]
             .add<int32_t>(ANDROID_SENSOR_TEST_PATTERN_MODE_OFF);
 
@@ -296,10 +334,13 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
             m[ANDROID_SENSOR_INFO_SENSITIVITY_RANGE]
                 .add<int32_t>(senitivityRange.first)
                 .add<int32_t>(senitivityRange.second);
+
+            m[ANDROID_SENSOR_MAX_ANALOG_SENSITIVITY] =
+                int32_t(senitivityRange.second / 2);
         }
 
         m[ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT] =
-            uint8_t(ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_RGB);
+            uint8_t(mHwCamera->getSensorColorFilterArrangement());
 
         {
             const auto exposureTimeRange = mHwCamera->getSensorExposureTimeRange();
@@ -311,6 +352,7 @@ ScopedAStatus CameraDevice::getCameraCharacteristics(CameraMetadata* metadata) {
 
         m[ANDROID_SENSOR_INFO_MAX_FRAME_DURATION] =
             int64_t(mHwCamera->getSensorMaxFrameDuration());
+        m[ANDROID_SENSOR_INFO_WHITE_LEVEL] = int32_t(1023);
         m[ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE] =
             uint8_t(ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN);  // SYSTEM_TIME_MONOTONIC
     }
