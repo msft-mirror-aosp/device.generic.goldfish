@@ -17,10 +17,12 @@
 # we do NOT support OTA - suppress the build warning
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 
-TARGET_KERNEL_USE ?= 6.6
-KERNEL_ARTIFACTS_PATH := kernel/prebuilts/$(TARGET_KERNEL_USE)/x86_64
+# Use 16K page size kernel
+TARGET_KERNEL_USE := 6.1
+TARGET_KERNEL_ARCH := x86_64
+KERNEL_ARTIFACTS_PATH := kernel/prebuilts/$(TARGET_KERNEL_USE)/$(TARGET_KERNEL_ARCH)/16k
 VIRTUAL_DEVICE_KERNEL_MODULES_PATH := \
-    kernel/prebuilts/common-modules/virtual-device/$(TARGET_KERNEL_USE)/x86-64
+    kernel/prebuilts/common-modules/virtual-device/$(TARGET_KERNEL_USE)/$(subst _,-,$(TARGET_KERNEL_ARCH))/16k
 
 # The list of modules to reach the second stage. For performance reasons we
 # don't want to put all modules into the ramdisk.
@@ -32,9 +34,7 @@ RAMDISK_KERNEL_MODULES := \
     virtio_pci_legacy_dev.ko \
     virtio_pci_modern_dev.ko \
     virtio-rng.ko \
-    vmw_vsock_virtio_transport_common.ko \
     vmw_vsock_virtio_transport.ko \
-    vsock.ko \
 
 BOARD_SYSTEM_KERNEL_MODULES := $(wildcard $(KERNEL_ARTIFACTS_PATH)/*.ko)
 
