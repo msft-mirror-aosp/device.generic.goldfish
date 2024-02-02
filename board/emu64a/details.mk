@@ -1,4 +1,5 @@
-# Copyright (C) 2019 The Android Open Source Project
+#
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,18 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 #
-# Emulator keyboard configuration file #2.
-#
-touch.deviceType = touchScreen
-touch.orientationAware = 1
 
-keyboard.layout = qwerty2
-keyboard.characterMap = qwerty2
-keyboard.orientationAware = 0
-keyboard.builtIn = 1
+include device/generic/goldfish/board/kernel/arm64.mk
 
-cursor.mode = navigation
-cursor.orientationAware = 1
+PRODUCT_PROPERTY_OVERRIDES += \
+       vendor.rild.libpath=/vendor/lib64/libgoldfish-ril.so
 
+PRODUCT_COPY_FILES += \
+    device/generic/goldfish/board/fstab/arm:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.ranchu \
+    device/generic/goldfish/board/fstab/arm:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.ranchu \
+    $(EMULATOR_KERNEL_FILE):kernel-ranchu \
+    device/generic/goldfish/data/etc/advancedFeatures.ini:advancedFeatures.ini \
