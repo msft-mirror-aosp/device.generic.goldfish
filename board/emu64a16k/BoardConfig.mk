@@ -1,4 +1,4 @@
-# Copyright (C) 2019 The Android Open Source Project
+# Copyright (C) 2024 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 #
-# Emulator keyboard configuration file #2.
-#
-touch.deviceType = touchScreen
-touch.orientationAware = 1
 
-keyboard.layout = qwerty2
-keyboard.characterMap = qwerty2
-keyboard.orientationAware = 0
-keyboard.builtIn = 1
+# arm64 emulator specific definitions
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_VARIANT := generic
+TARGET_CPU_ABI := arm64-v8a
 
-cursor.mode = navigation
-cursor.orientationAware = 1
+TARGET_2ND_ARCH_VARIANT := armv8-a
+TARGET_2ND_CPU_VARIANT := generic
 
+include device/generic/goldfish/board/BoardConfigCommon.mk
+
+BOARD_BOOTIMAGE_PARTITION_SIZE := 0x02000000
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 576716800

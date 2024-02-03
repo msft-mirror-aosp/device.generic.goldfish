@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 The Android Open Source Project
+# Copyright (C) 2024 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,13 +50,13 @@ PRODUCT_PACKAGES += \
     GoldfishSkinConfig
 
 #
-# All components inherited here go to vendor or vendor_boot image
+# All components inherited here go to vendor image
 #
-$(call inherit-product, device/generic/goldfish/board/emu64a/details.mk)
+$(call inherit-product, device/generic/goldfish/board/emu64a16k/details.mk)
 $(call inherit-product, device/generic/goldfish/64bitonly/product/emulator64_vendor.mk)
 
 # Overrides
 PRODUCT_BRAND := Android
-PRODUCT_NAME := sdk_phone64_arm64
-PRODUCT_DEVICE := emu64a
-PRODUCT_MODEL := Android SDK built for arm64
+PRODUCT_NAME := sdk_phone16k_arm64
+PRODUCT_DEVICE := emu64a16k
+PRODUCT_MODEL := Android SDK built for 16KB page-size arm64

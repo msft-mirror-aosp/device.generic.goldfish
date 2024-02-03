@@ -1,4 +1,5 @@
-# Copyright (C) 2019 The Android Open Source Project
+#
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#
-# Emulator keyboard configuration file #2.
-#
-touch.deviceType = touchScreen
-touch.orientationAware = 1
+# All phone specific stuff should be moved here.
 
-keyboard.layout = qwerty2
-keyboard.characterMap = qwerty2
-keyboard.orientationAware = 0
-keyboard.builtIn = 1
-
-cursor.mode = navigation
-cursor.orientationAware = 1
-
+$(call inherit-product, device/generic/goldfish/product/generic.mk)
