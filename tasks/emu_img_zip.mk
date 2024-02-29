@@ -71,7 +71,7 @@ ADVANCED_FEATURES_FILES += device/generic/goldfish/data/etc/google/$(INTERNAL_EM
 endif
 endif
 
-
+INTERNAL_EMULATOR_PACKAGE_FILES += hardware/interfaces/automotive/vehicle/aidl/emu_metadata/android.hardware.automotive.vehicle-types-meta.json
 
 name := sdk-repo-linux-system-images-$(FILE_NAME_TAG)
 
