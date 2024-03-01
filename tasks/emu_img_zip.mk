@@ -45,7 +45,7 @@ INTERNAL_EMULATOR_PACKAGE_FILES += device/generic/goldfish/data/etc/encryptionke
 INTERNAL_EMULATOR_PACKAGE_FILES += device/generic/goldfish/data/etc/userdata.img
 
 INTERNAL_EMULATOR_FEATURE_DIR := .
-ifneq ($(filter sdk_phone64_% sdk_gphone64_% sdk_tablet% sdk_gtablet%, $(TARGET_PRODUCT)),)
+ifneq ($(filter sdk_phone64_% sdk_gphone64_% sdk_tablet% sdk_gtablet% sdk_car_% sdk_gcar_%, $(TARGET_PRODUCT)),)
 INTERNAL_EMULATOR_FEATURE_DIR := 64bit
 endif
 
