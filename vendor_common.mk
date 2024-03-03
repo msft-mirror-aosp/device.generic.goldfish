@@ -286,6 +286,7 @@ ifneq ($(PRODUCT_IS_ATV_SDK),true)
 endif
 
 PRODUCT_COPY_FILES += \
+    device/generic/goldfish/data/empty_data_disk:data/empty_data_disk \
     device/generic/goldfish/data/etc/dtb.img:dtb.img \
     device/generic/goldfish/emulator-info.txt:data/misc/emulator/version.txt \
     device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
