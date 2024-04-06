@@ -45,7 +45,7 @@ INTERNAL_EMULATOR_PACKAGE_FILES += device/generic/goldfish/data/etc/encryptionke
 INTERNAL_EMULATOR_PACKAGE_FILES += device/generic/goldfish/data/etc/userdata.img
 
 INTERNAL_EMULATOR_FEATURE_DIR := .
-ifneq ($(filter sdk_phone64_% sdk_gphone64_% sdk_tablet% sdk_gtablet%, $(TARGET_PRODUCT)),)
+ifneq ($(filter sdk_phone64_% sdk_gphone64_% sdk_tablet% sdk_gtablet% sdk_car_% sdk_gcar_%, $(TARGET_PRODUCT)),)
 INTERNAL_EMULATOR_FEATURE_DIR := 64bit
 endif
 
@@ -71,7 +71,7 @@ ADVANCED_FEATURES_FILES += device/generic/goldfish/data/etc/google/$(INTERNAL_EM
 endif
 endif
 
-
+INTERNAL_EMULATOR_PACKAGE_FILES += hardware/interfaces/automotive/vehicle/aidl/emu_metadata/android.hardware.automotive.vehicle-types-meta.json
 
 name := sdk-repo-linux-system-images-$(FILE_NAME_TAG)
 
