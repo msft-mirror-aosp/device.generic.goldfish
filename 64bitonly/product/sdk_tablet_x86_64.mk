@@ -16,10 +16,8 @@
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 EMULATOR_DISABLE_RADIO := true
 
-# 1.5G + 8M
-BOARD_SUPER_PARTITION_SIZE := 1619001344
-BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE := 1610612736
-
+BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= $(shell expr 1536 \* 1048576 )
+BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE) + 8388608 )  # +8M
 
 PRODUCT_COPY_FILES += \
     device/generic/goldfish/tablet/data/etc/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
@@ -89,7 +87,7 @@ PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := \
 # All components inherited here go to vendor image
 #
 $(call inherit-product, device/generic/goldfish/board/emu64x/details.mk)
-$(call inherit-product, device/generic/goldfish/64bitonly/product/emulator64_vendor.mk)
+$(call inherit-product, device/generic/goldfish/product/tablet.mk)
 
 # Overrides
 PRODUCT_BRAND := Android
