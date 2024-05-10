@@ -80,18 +80,25 @@ struct HwCamera {
                            const Stream* streams, const HalStream* halStreams) = 0;
     virtual void close() = 0;
 
-    virtual std::tuple<int64_t, CameraMetadata, std::vector<StreamBuffer>,
+    virtual std::tuple<int64_t, int64_t, CameraMetadata, std::vector<StreamBuffer>,
                        std::vector<DelayedStreamBuffer>>
         processCaptureRequest(CameraMetadata, Span<CachedStreamBuffer*>) = 0;
 
     static int64_t getFrameDuration(const camera_metadata_t*, int64_t def,
                                     int64_t min, int64_t max);
 
+    static camera_metadata_enum_android_lens_state_t
+        getAfLensState(camera_metadata_enum_android_control_af_state_t);
+
     static bool compressJpeg(Rect<uint16_t> imageSize,
                              const android_ycbcr& imageYcbcr,
                              const CameraMetadata& metadata,
                              const native_handle_t* jpegBuffer,
                              size_t jpegBufferSize);
+
+    static bool convertRGBAtoRAW16(Rect<uint16_t> imageSize,
+                                   const void* rgba,
+                                   const native_handle_t* raw16Buffer);
 
     ////////////////////////////////////////////////////////////////////////////
     virtual Span<const std::pair<int32_t, int32_t>> getTargetFpsRanges() const = 0;
@@ -107,6 +114,7 @@ struct HwCamera {
     virtual float getMinimumFocusDistance() const;
     virtual std::tuple<int32_t, int32_t, int32_t> getMaxNumOutputStreams() const = 0;
     virtual int32_t getPipelineMaxDepth() const;
+    virtual uint32_t getAvailableCapabilitiesBitmap() const;
     virtual Span<const PixelFormat> getSupportedPixelFormats() const = 0;
     virtual Span<const Rect<uint16_t>> getSupportedResolutions() const = 0;
     virtual float getMaxDigitalZoom() const;
@@ -114,6 +122,7 @@ struct HwCamera {
     virtual int64_t getStallFrameDurationNs() const;
     virtual int32_t getSensorOrientation() const;
     virtual Rect<uint16_t> getSensorSize() const = 0;
+    virtual uint8_t getSensorColorFilterArrangement() const = 0;
     virtual float getSensorDPI() const;
     virtual std::pair<int32_t, int32_t> getSensorSensitivityRange() const;
     virtual std::pair<int64_t, int64_t> getSensorExposureTimeRange() const = 0;

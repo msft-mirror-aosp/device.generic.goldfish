@@ -22,7 +22,10 @@
 
 #include <linux/rtnetlink.h>
 
+#include <algorithm>
 #include <future>
+
+static const int kApfRamSize = 4096;
 
 // Provide some arbitrary firmware and driver versions for now
 static const char kFirmwareVersion[] = "1.0";
@@ -54,13 +57,15 @@ constexpr size_t arraySize(const T (&)[N]) {
 Interface::Interface(Netlink& netlink, const char* name)
     : mNetlink(netlink)
     , mName(name)
-    , mInterfaceIndex(0) {
+    , mInterfaceIndex(0)
+    , mApfMemory(kApfRamSize) {
 }
 
 Interface::Interface(Interface&& other) noexcept
     : mNetlink(other.mNetlink)
     , mName(std::move(other.mName))
-    , mInterfaceIndex(other.mInterfaceIndex) {
+    , mInterfaceIndex(other.mInterfaceIndex)
+    , mApfMemory(std::move(other.mApfMemory)) {
 }
 
 bool Interface::init() {
@@ -257,8 +262,25 @@ wifi_error Interface::getPacketFilterCapabilities(u32* version,
     if (version == nullptr || maxLength == nullptr) {
         return WIFI_ERROR_INVALID_ARGS;
     }
-    *version = 0;
-    *maxLength = 0;
+    *version = 4;
+    *maxLength = kApfRamSize;
+    return WIFI_SUCCESS;
+}
+
+wifi_error Interface::readPacketFilter(u32 src_offset, u8 *host_dst, u32 length) {
+    if (src_offset >= mApfMemory.size() || host_dst == nullptr
+        || length > mApfMemory.size() - src_offset) {
+        return WIFI_ERROR_INVALID_ARGS;
+    }
+    std::copy(mApfMemory.begin() + src_offset, mApfMemory.begin() + src_offset + length, host_dst);
+    return WIFI_SUCCESS;
+}
+
+wifi_error Interface::setPacketFilter(const u8 *program, u32 len) {
+    if (program == nullptr || len > mApfMemory.size()) {
+        return WIFI_ERROR_INVALID_ARGS;
+    }
+    std::copy(program, program + len, mApfMemory.begin());
     return WIFI_SUCCESS;
 }
 

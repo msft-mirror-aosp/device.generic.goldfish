@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021 The Android Open Source Project
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,44 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-QEMU_USE_SYSTEM_EXT_PARTITIONS := true
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 EMULATOR_DISABLE_RADIO := true
 
+BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= $(shell expr 1536 \* 1048576 )
+BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE) + 8388608 )  # +8M
+
 PRODUCT_COPY_FILES += \
+    device/generic/goldfish/tablet/data/etc/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
     device/generic/goldfish/data/etc/advancedFeatures.ini.tablet:advancedFeatures.ini \
     device/generic/goldfish/data/etc/config.ini.nexus7tab:config.ini
 
-PRODUCT_CHARACTERISTICS := tablet,nosdcard
+PRODUCT_COPY_FILES+= \
+        device/generic/goldfish/data/etc/tablet_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml
 
-#
-# All components inherited here go to system image
-#
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/generic_no_telephony.mk)
+PRODUCT_COPY_FILES += device/generic/goldfish/tablet/data/etc/tablet.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/tablet.xml
 
-# Enable mainline checking for excat this product name
-ifeq (sdk_tablet_x86_64,$(TARGET_PRODUCT))
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
+
 PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
-endif
-
-#
-# All components inherited here go to product image
-#
 
 PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := \
-    development/sys-img/images_x86_64_source.prop_template
+    device/generic/goldfish/64bitonly/product/tablet_images_x86_64_source.prop_template
 
-#
-# All components inherited here go to vendor image
-#
-$(call inherit-product, device/generic/goldfish/64bitonly/product/x86_64-vendor.mk)
-$(call inherit-product, device/generic/goldfish/64bitonly/product/emulator64_vendor.mk)
-$(call inherit-product, device/generic/goldfish/emulator64_x86_64/device.mk)
+$(call inherit-product, device/generic/goldfish/board/emu64x/details.mk)
+$(call inherit-product, device/generic/goldfish/product/tablet.mk)
 
-
-# Overrides
 PRODUCT_BRAND := Android
 PRODUCT_NAME := sdk_tablet_x86_64
-PRODUCT_DEVICE := emulator64_x86_64
-PRODUCT_MODEL := Android SDK built for x86_64
+PRODUCT_DEVICE := emu64x
+PRODUCT_MODEL := Android SDK Tablet for x86_64

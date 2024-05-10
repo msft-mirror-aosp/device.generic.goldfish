@@ -45,12 +45,17 @@ size_t getBytesPerSample(const AudioFormat &format);
 bool checkAudioConfig(const AudioConfig &cfg);
 bool checkAudioConfig(bool isOut,
                       size_t duration_ms,
+                      size_t extraAlignment,
                       const AudioConfig &cfg,
                       AudioConfig &suggested);
 
 bool checkAudioPortConfig(const AudioPortConfig& cfg);
 
 TimeSpec nsecs2TimeSpec(nsecs_t);
+
+inline constexpr nsecs_t timespec2Nsecs(const TimeSpec &ts) {
+    return s2ns(ts.tvSec) + ts.tvNSec;
+}
 
 bool setThreadPriority(SchedPolicy policy, int prio);
 
