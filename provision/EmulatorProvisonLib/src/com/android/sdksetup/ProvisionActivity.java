@@ -21,7 +21,7 @@ import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.input.InputManager;
+import android.hardware.input.InputManagerGlobal;
 import android.hardware.input.KeyboardLayout;
 import android.location.LocationManager;
 import android.net.wifi.WifiManager;
@@ -46,7 +46,7 @@ public abstract class ProvisionActivity extends Activity {
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        if (Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1) {
+        if (provisionRequired()) {
             preProvivion();
             doProvision();
             postProvision();
@@ -97,6 +97,12 @@ public abstract class ProvisionActivity extends Activity {
     protected void provisionWifi(final String ssid) {
         Settings.Global.putInt(getContentResolver(), Settings.Global.TETHER_OFFLOAD_DISABLED, 1);
 
+        final WifiManager mWifiManager = getApplicationContext().getSystemService(WifiManager.class);
+        if (!mWifiManager.setWifiEnabled(true)) {
+            Log.e(TAG(), "Unable to turn on Wi-Fi");
+            return;
+        }
+
         final int ADD_NETWORK_FAIL = -1;
         final String quotedSsid = "\"" + ssid + "\"";
 
@@ -104,7 +110,6 @@ public abstract class ProvisionActivity extends Activity {
         config.SSID = quotedSsid;
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
 
-        final WifiManager mWifiManager = getApplicationContext().getSystemService(WifiManager.class);
         final int netId = mWifiManager.addNetwork(config);
 
         if (netId == ADD_NETWORK_FAIL || !mWifiManager.enableNetwork(netId, true)) {
@@ -114,6 +119,8 @@ public abstract class ProvisionActivity extends Activity {
 
     // Set physical keyboard layout based on the system property set by emulator host.
     protected void provisionKeyboard(final String deviceName) {
+        Settings.Secure.putInt(getContentResolver(), Settings.Secure.SHOW_IME_WITH_HARD_KEYBOARD, 1);
+
         final String layoutName = SystemProperties.get("vendor.qemu.keyboard_layout");
         final InputDevice device = getKeyboardDevice(deviceName);
         if (device != null && !layoutName.isEmpty()) {
@@ -122,6 +129,8 @@ public abstract class ProvisionActivity extends Activity {
     }
 
     protected void provisionDisplay() {
+        Settings.Global.putInt(getContentResolver(), Settings.Global.STAY_ON_WHILE_PLUGGED_IN, 1);
+
         final int screen_off_timeout =
             SystemProperties.getInt("ro.boot.qemu.settings.system.screen_off_timeout", 0);
         if (screen_off_timeout > 0) {
@@ -149,6 +158,25 @@ public abstract class ProvisionActivity extends Activity {
         } else if (!displaySettingsName.isEmpty()) {
             Log.e(TAG(), "Unexpected value `" + displaySettingsName + "` in " + displaySettingsProp);
         }
+        final String autoRotateProp = "ro.boot.qemu.autorotate";
+        final String autoRotateSetting = SystemProperties.get(autoRotateProp);
+        if (!autoRotateSetting.isEmpty()) {
+            Settings.System.putString(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, autoRotateSetting);
+        }
+    }
+
+    // required for CTS which uses the mock modem
+    private void provisionMockModem() {
+        String value = SystemProperties.get("ro.boot.radio.allow_mock_modem");
+        if (!value.isEmpty()) {
+            if (value.equals("1")) {
+                value = "true";
+            } else if (value.equals("0")) {
+                value = "false";
+            }
+
+            SystemProperties.set("persist.radio.allow_mock_modem", value);
+        }
     }
 
     protected void provisionTelephony() {
@@ -156,6 +184,8 @@ public abstract class ProvisionActivity extends Activity {
         // the following blocks, TODO: find out why and fix it. disable this for now.
         // TelephonyManager mTelephony = getApplicationContext().getSystemService(TelephonyManager.class);
         // mTelephony.setPreferredNetworkTypeBitmask(TelephonyManager.NETWORK_TYPE_BITMASK_NR);
+
+        provisionMockModem();
     }
 
     protected void provisionLocation() {
@@ -189,7 +219,7 @@ public abstract class ProvisionActivity extends Activity {
     }
 
     protected void setKeyboardLayout(final InputDevice keyboardDevice, final String layoutName) {
-        final InputManager im = InputManager.getInstance();
+        final InputManagerGlobal im = InputManagerGlobal.getInstance();
 
         final KeyboardLayout[] keyboardLayouts =
                 im.getKeyboardLayoutsForInputDevice(keyboardDevice.getIdentifier());
@@ -201,5 +231,14 @@ public abstract class ProvisionActivity extends Activity {
                 return;
             }
         }
+    }
+
+    protected boolean provisionRequired() {
+        return (Settings.Global.getInt(getContentResolver(),
+                Settings.Global.DEVICE_PROVISIONED, 0) != 1) || forceProvision();
+    }
+
+    protected boolean forceProvision() {
+        return SystemProperties.get("ro.automotive_emulator.provisioning", "").equals("SdkSetup");
     }
 }

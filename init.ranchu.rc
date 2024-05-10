@@ -15,6 +15,7 @@ on early-init
     setprop ro.config.low_ram ${ro.boot.config.low_ram}
     setprop ro.cpuvulkan.version ${ro.boot.qemu.cpuvulkan.version}
     setprop ro.hardware.egl ${ro.boot.hardwareegl:-emulation}
+    setprop ro.hardware.vulkan ${ro.boot.hardware.vulkan}
     setprop ro.opengles.version ${ro.boot.opengles.version}
     setprop dalvik.vm.heapsize ${ro.boot.dalvik.vm.heapsize:-192m}
     setprop dalvik.vm.checkjni ${ro.boot.dalvik.vm.checkjni}
@@ -23,10 +24,10 @@ on early-init
     setprop debug.sf.nobootanimation ${ro.boot.debug.sf.nobootanimation}
     setprop vendor.qemu.dev.bootcomplete 0
 
-on init
-    # set RLIMIT_MEMLOCK to 8MB for BPF network statistics
-    setrlimit memlock 8388608 8388608
+    start vendor.dlkm_loader
+    exec u:r:modprobe:s0 -- /system/bin/modprobe -a -d /system/lib/modules zram.ko
 
+on init
     write /sys/block/zram0/comp_algorithm lz4
     write /proc/sys/vm/page-cluster 0
 
@@ -56,14 +57,11 @@ on init
     start qemu-props
 
 on post-fs-data
-    setprop vold.post_fs_data_done 1
-    mkdir /data/vendor/adb 0755 root root
-    mkdir /data/vendor/devicestate 0755 root root
     mkdir /data/vendor/var 0755 root root
     mkdir /data/vendor/var/run 0755 root root
 
-    start qemu-adb-keys
     start qemu-device-state
+    start ranchu-adb-setup
 
 on zygote-start
     # Create the directories used by the Wireless subsystem
@@ -78,17 +76,24 @@ on boot
     # Create an unused USB gadget to allow sysfs testing
     mkdir /config/usb_gadget/g1 0770 root root
 
+service vendor.dlkm_loader /vendor/bin/dlkm_loader
+    class main
+    user root
+    group root system
+    disabled
+    oneshot
+
 service ranchu-setup /vendor/bin/init.ranchu-core.sh
     user root
     group root
     oneshot
     disabled
 
-service qemu-adb-setup /system_ext/bin/init.qemu-adb-keys.sh
-    class core
-    user root
+service ranchu-adb-setup /system_ext/bin/init.ranchu.adb.setup.sh
+    user system
     group shell
-    disabled  # Started when qemu-adb-keys is stopped
+    stdio_to_kmsg
+    disabled
     oneshot
 
 on property:vendor.qemu.vport.gnss=*
@@ -140,17 +145,12 @@ service qemu-props-bootcomplete /vendor/bin/qemu-props "bootcomplete"
     oneshot
     disabled
 
-service qemu-adb-keys /vendor/bin/qemu-export-property qemu.adb.pubkey /data/vendor/adb/adb_keys
+service qemu-device-state /vendor/bin/init_ranchu_device_state.sh
     user root
     group root
     oneshot
     disabled
-
-service qemu-device-state /vendor/bin/qemu-export-property -f qemu.device_state /data/vendor/devicestate/device_state_configuration.xml
-    user root
-    group root
-    oneshot
-    disabled
+    stdio_to_kmsg
 
 service goldfish-logcat /system/bin/logcat -f /dev/hvc1 ${ro.boot.logcat}
     class main

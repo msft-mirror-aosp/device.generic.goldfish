@@ -68,8 +68,8 @@ struct Session : public BnSession {
     ErrorCode validateHat(const keymaster::HardwareAuthToken& hat) const;
     bool sensorListenerFuncImpl();
     void sensorListenerFunc() { while (sensorListenerFuncImpl()) {} }
-    void onSenserEventOn(int fid);
-    void onSenserEventOff();
+    void onSensorEventOn(int fid);
+    void onSensorEventOff();
     void cancellEnroll();
     void cancellAuthenticate();
     void cancellDetectInteraction();
@@ -111,11 +111,18 @@ struct Session : public BnSession {
     ndk::ScopedAStatus onContextChanged(const common::OperationContext& /*context*/) override {
         return ndk::ScopedAStatus::ok();
     }
+    ndk::ScopedAStatus onPointerCancelWithContext(const PointerContext& /*context*/) override {
+        return ndk::ScopedAStatus::ok();
+    }
+    ndk::ScopedAStatus setIgnoreDisplayTouches(bool /*shouldIgnore*/) override {
+        return ndk::ScopedAStatus::ok();
+    }
 
     const std::shared_ptr<ISessionCallback> mSessionCb;
-    Storage mStorage;           // mMutex
-    std::mt19937_64 mRandom;    // mMutex
-    int64_t mArg = 0;           // mMutex
+    Storage mStorage;                   // mMutex
+    std::mt19937_64 mRandom;            // mMutex
+    int64_t mEnrollingSecUserId = 0;    // mMutex
+    int64_t mAuthChallenge = 0;         // mMutex
     ::android::base::unique_fd mCallerFd;
     ::android::base::unique_fd mSensorThreadFd;
     std::thread mSensorListener;

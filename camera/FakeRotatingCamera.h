@@ -44,7 +44,7 @@ struct FakeRotatingCamera : public HwCamera {
                    const Stream* streams, const HalStream* halStreams) override;
     void close() override;
 
-    std::tuple<int64_t, CameraMetadata, std::vector<StreamBuffer>,
+    std::tuple<int64_t, int64_t, CameraMetadata, std::vector<StreamBuffer>,
                std::vector<DelayedStreamBuffer>>
         processCaptureRequest(CameraMetadata, Span<CachedStreamBuffer*>) override;
 
@@ -52,16 +52,19 @@ struct FakeRotatingCamera : public HwCamera {
     Span<const std::pair<int32_t, int32_t>> getTargetFpsRanges() const override;
     Span<const Rect<uint16_t>> getAvailableThumbnailSizes() const override;
     bool isBackFacing() const override;
+    Span<const float> getAvailableFocalLength() const override;
     std::tuple<int32_t, int32_t, int32_t> getMaxNumOutputStreams() const override;
     Span<const PixelFormat> getSupportedPixelFormats() const override;
     Span<const Rect<uint16_t>> getSupportedResolutions() const override;
     int64_t getMinFrameDurationNs() const override;
     Rect<uint16_t> getSensorSize() const override;
+    uint8_t getSensorColorFilterArrangement() const override;
     std::pair<int64_t, int64_t> getSensorExposureTimeRange() const override;
     int64_t getSensorMaxFrameDuration() const override;
     std::pair<int32_t, int32_t> getDefaultTargetFpsRange(RequestTemplate) const override;
     int64_t getDefaultSensorExpTime() const override;
     int64_t getDefaultSensorFrameDuration() const override;
+    float getDefaultFocalLength() const override;
 
 private:
     struct StreamInfo {
@@ -81,12 +84,6 @@ private:
 
     struct RenderParams {
         struct CameraParams {
-            struct Frustum {
-                float angle;
-                float near;
-                float far;
-            };
-            Frustum frustum;
             float pos3[3];
             float rotXYZ3[3];
         };

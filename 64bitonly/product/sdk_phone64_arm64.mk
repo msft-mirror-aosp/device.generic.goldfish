@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-QEMU_USE_SYSTEM_EXT_PARTITIONS := true
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 # This is a build configuration for a full-featured build of the
@@ -23,35 +22,18 @@ PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
 
-#
-# All components inherited here go to system image
-#
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/generic_system.mk)
+BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= $(shell expr 1536 \* 1048576 )
+BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE) + 8388608 )  # +8M
 
-#
-# All components inherited here go to system_ext image
-#
-$(call inherit-product, $(SRC_TARGET_DIR)/product/handheld_system_ext.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/telephony_system_ext.mk)
-
-#
-# All components inherited here go to product image
-#
-$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_product.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 
 PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := \
     development/sys-img/images_arm64-v8a_source.prop_template
 
-#
-# All components inherited here go to vendor or vendor_boot image
-#
-$(call inherit-product, device/generic/goldfish/arm64-vendor.mk)
-$(call inherit-product, device/generic/goldfish/64bitonly/product/emulator64_vendor.mk)
-$(call inherit-product, device/generic/goldfish/emulator64_arm64/device.mk)
+$(call inherit-product, device/generic/goldfish/board/emu64a/details.mk)
+$(call inherit-product, device/generic/goldfish/product/phone.mk)
 
-# Overrides
 PRODUCT_BRAND := Android
 PRODUCT_NAME := sdk_phone64_arm64
-PRODUCT_DEVICE := emulator64_arm64
+PRODUCT_DEVICE := emu64a
 PRODUCT_MODEL := Android SDK built for arm64

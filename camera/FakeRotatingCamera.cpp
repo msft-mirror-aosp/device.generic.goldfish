@@ -35,7 +35,7 @@
 #undef EGL_EGLEXT_PROTOTYPES
 #undef GL_GLEXT_PROTOTYPES
 
-#include "acircles_pattern_1280_720.h"
+#include "acircles_pattern_512_512.h"
 #include "converters.h"
 #include "debug.h"
 #include "FakeRotatingCamera.h"
@@ -60,6 +60,8 @@ constexpr int kMinFPS = 2;
 constexpr int kMedFPS = 15;
 constexpr int kMaxFPS = 30;
 constexpr int64_t kOneSecondNs = 1000000000;
+
+constexpr float kDefaultFocalLength = 2.8;
 
 constexpr int64_t kMinFrameDurationNs = kOneSecondNs / kMaxFPS;
 constexpr int64_t kMaxFrameDurationNs = kOneSecondNs / kMinFPS;
@@ -89,44 +91,6 @@ constexpr uint32_t toR8G8B8A8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 
 constexpr double degrees2rad(const double degrees) {
     return degrees * M_PI / 180.0;
-}
-
-std::tuple<float, float, float> getFrustumParams() {
-    constexpr float defaultAngle = degrees2rad(100);
-    constexpr float defaultNear = 1;
-    constexpr float defaultFar = 10;
-
-    std::string valueStr =
-        base::GetProperty("vendor.qemu.FakeRotatingCamera.frustum", "");
-    float angle, near, far;
-    if (valueStr.empty()) {
-        goto returnDefault;
-    } else if (sscanf(valueStr.c_str(), "%g,%g,%g", &angle, &near, &far) == 3) {
-        near = std::max(near, defaultNear);
-        far = std::min(std::max(far, 3 * near), 100 * near);
-    } else if (sscanf(valueStr.c_str(), "%g", &angle) == 1) {
-        near = defaultNear;
-        far = defaultFar;
-    } else {
-        goto returnDefault;
-    }
-
-    angle = degrees2rad(std::min(std::max(angle, 1.0f), 160.0f));
-    return {angle, near, far};
-
-returnDefault:
-    return {defaultAngle, defaultNear, defaultFar};
-}
-
-std::tuple<float, float, float> getEyeCoordinates() {
-    const std::string valueStr =
-        base::GetProperty("vendor.qemu.FakeRotatingCamera.eyeCoordinates", "");
-    float x, y, z;
-    if (valueStr.empty() || (sscanf(valueStr.c_str(), "%g,%g,%g", &x, &y, &z) != 3)) {
-        return {0, 0, 0};
-    } else {
-        return {x, y, z};
-    }
 }
 
 // This texture is useful to debug camera orientation and image aspect ratio
@@ -191,19 +155,37 @@ abc3d::AutoTexture loadTestPatternTextureColors() {
 
 // This texture is used to pass CtsVerifier
 abc3d::AutoTexture loadTestPatternTextureAcircles() {
-    constexpr uint16_t kBackground = toR5G6B5(.4, .4, .4);
+    constexpr uint16_t kPalette[] = {
+        toR5G6B5(0, 0, 0),
+        toR5G6B5(.25, .25, .25),
+        toR5G6B5(.5, .5, .5),
+        toR5G6B5(1, 1, 0),
+        toR5G6B5(1, 1, 1),
+    };
 
-    std::vector<uint16_t> texels(kAcirclesPatternWidth * kAcirclesPatternWidth,
-                                 kBackground);
+    std::vector<uint16_t> texels;
+    texels.reserve(kAcirclesPatternWidth * kAcirclesPatternWidth);
 
-    const uint8_t* y = kAcirclesPattern;  // ignore cbcr for now
-    uint16_t* rgb16 = &texels[kAcirclesPatternWidth *
-                              ((kAcirclesPatternWidth - kAcirclesPatternHeight) / 2)];
-    for (size_t row = kAcirclesPatternHeight; row > 0; --row) {
-        for (size_t col = kAcirclesPatternWidth; col > 0; --col, ++y, ++rgb16) {
-            const float v = *y / 255.0;
-            *rgb16 = toR5G6B5(v, v, v);
+    auto i = std::begin(kAcirclesPatternRLE);
+    const auto end = std::end(kAcirclesPatternRLE);
+    while (i < end) {
+        const unsigned x = *i;
+        ++i;
+        unsigned n;
+        uint16_t color;
+        if (x & 1) {
+            n = (x >> 3) + 1;
+            color = kPalette[(x >> 1) & 3];
+        } else {
+            if (x & 2) {
+                n = ((unsigned(*i) << 6) | (x >> 2)) + 1;
+                ++i;
+            } else {
+                n = (x >> 2) + 1;
+            }
+            color = kPalette[4];
         }
+        texels.insert(texels.end(), n, color);
     }
 
     abc3d::AutoTexture tex(GL_TEXTURE_2D, GL_RGB,
@@ -452,7 +434,7 @@ void FakeRotatingCamera::closeImpl(const bool everything) {
     }
 }
 
-std::tuple<int64_t, CameraMetadata,
+std::tuple<int64_t, int64_t, CameraMetadata,
            std::vector<StreamBuffer>, std::vector<DelayedStreamBuffer>>
 FakeRotatingCamera::processCaptureRequest(CameraMetadata metadataUpdate,
                                           Span<CachedStreamBuffer*> csbs) {
@@ -472,11 +454,6 @@ FakeRotatingCamera::processCaptureRequest(CameraMetadata metadataUpdate,
 
     RenderParams renderParams;
     {
-        auto& fr = renderParams.cameraParams.frustum;
-        std::tie(fr.angle, fr.near, fr.far) = getFrustumParams();
-        float* pos3 = renderParams.cameraParams.pos3;
-        std::tie(pos3[0], pos3[1], pos3[2]) = getEyeCoordinates();
-
         SensorValues sensorValues;
         if (readSensors(&sensorValues)) {
             static_assert(sizeof(renderParams.cameraParams.rotXYZ3) ==
@@ -487,6 +464,13 @@ FakeRotatingCamera::processCaptureRequest(CameraMetadata metadataUpdate,
         } else {
             goto fail;
         }
+
+        constexpr double kR = 5.0;
+
+        float* pos3 = renderParams.cameraParams.pos3;
+        pos3[0] = -kR * sin(sensorValues.rotation[0]) * sin(sensorValues.rotation[1]);
+        pos3[1] = -kR * sin(sensorValues.rotation[0]) * cos(sensorValues.rotation[1]);
+        pos3[2] = kR * cos(sensorValues.rotation[0]);
     }
 
     for (size_t i = 0; i < csbsSize; ++i) {
@@ -512,7 +496,7 @@ FakeRotatingCamera::processCaptureRequest(CameraMetadata metadataUpdate,
         }
     }
 
-    return make_tuple(mFrameDurationNs,
+    return make_tuple(mFrameDurationNs, kDefaultSensorExposureTimeNs,
                       std::move(resultMetadata), std::move(outputBuffers),
                       std::move(delayedOutputBuffers));
 
@@ -523,7 +507,7 @@ fail:
         outputBuffers.push_back(csb->finish(false));
     }
 
-    return make_tuple(FAILURE(-1),
+    return make_tuple(FAILURE(-1), 0,
                       std::move(resultMetadata), std::move(outputBuffers),
                       std::move(delayedOutputBuffers));
 }
@@ -677,11 +661,15 @@ bool FakeRotatingCamera::drawScene(const Rect<uint16_t> imageSize,
         };
 
         {
-            const auto& frustum = renderParams.cameraParams.frustum;
-            const double right = frustum.near * sin(.5 * frustum.angle);
+            constexpr double kNear = 1.0;
+            constexpr double kFar = 10.0;
+
+            // We use `height` to calculate `right` because the image is 90degrees
+            // rotated (sensorOrientation=90).
+            const double right = kNear * (.5 * getSensorSize().height / getSensorDPI() / getDefaultFocalLength());
             const double top = right / imageSize.width * imageSize.height;
             abc3d::frustum(pvMatrix44, -right, right, -top, top,
-                           frustum.near, frustum.far);
+                           kNear, kFar);
         }
 
         abc3d::mulM44(projectionMatrix44, pvMatrix44, workaroundMatrix44);
@@ -703,19 +691,20 @@ bool FakeRotatingCamera::drawScene(const Rect<uint16_t> imageSize,
 bool FakeRotatingCamera::drawSceneImpl(const float pvMatrix44[]) const {
     constexpr float kX = 0;
     constexpr float kY = 0;
-    constexpr float kZ = -5;
+    constexpr float kZ = 0;
     constexpr float kS = 1;
 
     const GLfloat vVertices[] = {
-       -kS + kX,  kS + kY, kZ,  // Position 0
+       -kS + kX, kY, kZ - kS,   // Position 0
         0,  0,                  // TexCoord 0
-       -kS + kX, -kS + kY, kZ,  // Position 1
+       -kS + kX, kY, kZ + kS,   // Position 1
         0,  1,                  // TexCoord 1
-        kS + kX, -kS + kY, kZ,  // Position 2
+        kS + kX, kY, kZ + kS,   // Position 2
         1,  1,                  // TexCoord 2
-        kS + kX,  kS + kY, kZ,  // Position 3
+        kS + kX, kY, kZ - kS,   // Position 3
         1,  0                   // TexCoord 3
     };
+
     static const GLushort indices[] = { 0, 1, 2, 0, 2, 3 };
 
     glClearColor(0.2, 0.3, 0.2, 1.0);
@@ -808,31 +797,31 @@ CameraMetadata FakeRotatingCamera::applyMetadata(const CameraMetadata& metadata)
     const camera_metadata_enum_android_control_af_mode_t afMode =
         find_camera_metadata_ro_entry(raw, ANDROID_CONTROL_AF_MODE, &entry) ?
             ANDROID_CONTROL_AF_MODE_OFF :
-            static_cast<camera_metadata_enum_android_control_af_mode_t>(entry.data.i32[0]);
+            static_cast<camera_metadata_enum_android_control_af_mode_t>(entry.data.u8[0]);
 
     const camera_metadata_enum_android_control_af_trigger_t afTrigger =
         find_camera_metadata_ro_entry(raw, ANDROID_CONTROL_AF_TRIGGER, &entry) ?
             ANDROID_CONTROL_AF_TRIGGER_IDLE :
-            static_cast<camera_metadata_enum_android_control_af_trigger_t>(entry.data.i32[0]);
+            static_cast<camera_metadata_enum_android_control_af_trigger_t>(entry.data.u8[0]);
 
     const auto af = mAFStateMachine(afMode, afTrigger);
 
     CameraMetadataMap m = parseCameraMetadataMap(metadata);
 
-    m[ANDROID_CONTROL_AE_STATE] = ANDROID_CONTROL_AE_STATE_CONVERGED;
-    m[ANDROID_CONTROL_AF_STATE] = af.first;
-    m[ANDROID_CONTROL_AWB_STATE] = ANDROID_CONTROL_AWB_STATE_CONVERGED;
-    m[ANDROID_FLASH_STATE] = ANDROID_FLASH_STATE_UNAVAILABLE;
+    m[ANDROID_CONTROL_AE_STATE] = uint8_t(ANDROID_CONTROL_AE_STATE_CONVERGED);
+    m[ANDROID_CONTROL_AF_STATE] = uint8_t(af.first);
+    m[ANDROID_CONTROL_AWB_STATE] = uint8_t(ANDROID_CONTROL_AWB_STATE_CONVERGED);
+    m[ANDROID_FLASH_STATE] = uint8_t(ANDROID_FLASH_STATE_UNAVAILABLE);
     m[ANDROID_LENS_APERTURE] = getDefaultAperture();
     m[ANDROID_LENS_FOCUS_DISTANCE] = af.second;
-    m[ANDROID_LENS_STATE] = ANDROID_LENS_STATE_STATIONARY;
+    m[ANDROID_LENS_STATE] = uint8_t(getAfLensState(af.first));
     m[ANDROID_REQUEST_PIPELINE_DEPTH] = uint8_t(4);
     m[ANDROID_SENSOR_FRAME_DURATION] = mFrameDurationNs;
     m[ANDROID_SENSOR_EXPOSURE_TIME] = kDefaultSensorExposureTimeNs;
     m[ANDROID_SENSOR_SENSITIVITY] = getDefaultSensorSensitivity();
     m[ANDROID_SENSOR_TIMESTAMP] = int64_t(0);
     m[ANDROID_SENSOR_ROLLING_SHUTTER_SKEW] = kMinSensorExposureTimeNs;
-    m[ANDROID_STATISTICS_SCENE_FLICKER] = ANDROID_STATISTICS_SCENE_FLICKER_NONE;
+    m[ANDROID_STATISTICS_SCENE_FLICKER] = uint8_t(ANDROID_STATISTICS_SCENE_FLICKER_NONE);
 
     std::optional<CameraMetadata> maybeSerialized =
         serializeCameraMetadataMap(m);
@@ -921,6 +910,14 @@ bool FakeRotatingCamera::isBackFacing() const {
     return mIsBackFacing;
 }
 
+Span<const float> FakeRotatingCamera::getAvailableFocalLength() const {
+    static const float availableFocalLengths[] = {
+        kDefaultFocalLength
+    };
+
+    return availableFocalLengths;
+}
+
 std::tuple<int32_t, int32_t, int32_t> FakeRotatingCamera::getMaxNumOutputStreams() const {
     return {
         0,  // raw
@@ -946,6 +943,10 @@ int64_t FakeRotatingCamera::getMinFrameDurationNs() const {
 
 Rect<uint16_t> FakeRotatingCamera::getSensorSize() const {
     return {1920, 1080};
+}
+
+uint8_t FakeRotatingCamera::getSensorColorFilterArrangement() const {
+    return ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_RGB;
 }
 
 std::pair<int64_t, int64_t> FakeRotatingCamera::getSensorExposureTimeRange() const {
@@ -988,6 +989,10 @@ int64_t FakeRotatingCamera::getDefaultSensorExpTime() const {
 
 int64_t FakeRotatingCamera::getDefaultSensorFrameDuration() const {
     return kMinFrameDurationNs;
+}
+
+float FakeRotatingCamera::getDefaultFocalLength() const {
+    return kDefaultFocalLength;
 }
 
 }  // namespace hw
