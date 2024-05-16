@@ -46,7 +46,7 @@ public abstract class ProvisionActivity extends Activity {
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        if (Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1) {
+        if (provisionRequired()) {
             preProvivion();
             doProvision();
             postProvision();
@@ -222,5 +222,9 @@ public abstract class ProvisionActivity extends Activity {
                 return;
             }
         }
+    }
+
+    protected boolean provisionRequired() {
+        return Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1;
     }
 }
