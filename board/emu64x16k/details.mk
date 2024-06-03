@@ -25,12 +25,9 @@ ADVANCED_FEATURES_FILE := advancedFeatures.ini.minigbm
 endif
 
 PRODUCT_COPY_FILES += \
-    device/generic/goldfish/data/etc/config.ini.xl:config.ini \
     device/generic/goldfish/data/etc/$(ADVANCED_FEATURES_FILE):advancedFeatures.ini \
     $(EMULATOR_KERNEL_FILE):kernel-ranchu \
     device/generic/goldfish/board/fstab/x86:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.ranchu \
     device/generic/goldfish/board/fstab/x86:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.ranchu \
 
-# Enable large page size support
-PRODUCT_MAX_PAGE_SIZE_SUPPORTED := 65536
-PRODUCT_NO_BIONIC_PAGE_SIZE_MACRO := true
+$(call inherit-product, device/generic/goldfish/board/16k.mk)

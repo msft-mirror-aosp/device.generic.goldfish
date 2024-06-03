@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-/**
- * Copyright (c) 2015, The Android Open Source Project
+ * Copyright (c) 2024, The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +13,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 -->
-
 <resources>
-    <bool name="def_lockscreen_disabled">true</bool>
-    <bool name="def_wifi_on">true</bool>
-    <!-- Allow scanning even if WiFi is disabled -->
-    <integer name="def_wifi_scan_always_available">1</integer>
+    <!-- Radius of the software rounded corners. -->
+    <dimen name="rounded_corner_radius">128px</dimen>
+    <dimen name="rounded_corner_radius_top">128px</dimen>
+    <dimen name="rounded_corner_radius_bottom">128px</dimen>
 
-    <!-- maximize the timeout to INT_MAX about 500+ hours -->
-    <integer name="def_screen_off_timeout">2147483647</integer>
+    <!-- Height of the status bar.
+         Do not read this dimen directly. Use {@link SystemBarUtils#getStatusBarHeight} instead.
+         -->
+    <dimen name="status_bar_height_default">28dp</dimen>
+    <dimen name="status_bar_height_portrait">151px</dimen>
+    <dimen name="status_bar_height_landscape">28dp</dimen>
 
-    <!-- Allow users to use both the on-screen keyboard, as well as a real
-         keyboard -->
-    <bool name="def_show_ime_with_hard_keyboard">true</bool>
 </resources>

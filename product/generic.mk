@@ -21,7 +21,7 @@ $(call inherit-product-if-exists, frameworks/native/build/phone-xhdpi-2048-dalvi
 # Enable Scoped Storage related
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
-PRODUCT_SHIPPING_API_LEVEL := 34
+PRODUCT_SHIPPING_API_LEVEL := 35
 PRODUCT_FULL_TREBLE_OVERRIDE := true
 DEVICE_MANIFEST_FILE += device/generic/goldfish/manifest.xml
 
@@ -31,10 +31,18 @@ PRODUCT_SOONG_NAMESPACES += \
 
 TARGET_USES_MKE2FS := true
 
+# Set Vendor SPL to match platform
+VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
+
 # RKPD
 PRODUCT_PRODUCT_PROPERTIES += \
     remote_provisioning.enable_rkpd=true \
     remote_provisioning.hostname=remoteprovisioning.googleapis.com
+
+PRODUCT_PACKAGES += \
+    hwservicemanager \
+    android.hidl.allocator@1.0-service
+
 
 PRODUCT_VENDOR_PROPERTIES += \
     ro.control_privapp_permissions=enforce \
@@ -55,10 +63,12 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.surface_flinger.supports_background_blur=1 \
     ro.surface_flinger.use_color_management=false \
     ro.zygote.disable_gl_preload=1 \
+    debug.renderengine.backend=skiaglthreaded \
     debug.sf.vsync_reactor_ignore_present_fences=true \
     debug.stagefright.c2inputsurface=-1 \
     debug.stagefright.ccodec=4 \
     graphics.gpu.profiler.support=true \
+    persist.sys.usb.config="" \
     persist.sys.zram_enabled=1 \
     wifi.direct.interface=p2p-dev-wlan0 \
     wifi.interface=wlan0 \
@@ -86,6 +96,7 @@ PRODUCT_PACKAGES += \
     local_time.default \
     SdkSetup \
     goldfish_overlay_connectivity_gsi \
+    RanchuCommonOverlay \
     libGoldfishProfiler \
     dlkm_loader
 
@@ -160,6 +171,8 @@ PRODUCT_PACKAGES += \
     SystemUIEmulationPixelFoldOverlay \
     EmulationPixel8ProOverlay \
     SystemUIEmulationPixel8ProOverlay \
+    EmulationPixel8aOverlay \
+    SystemUIEmulationPixel8aOverlay \
     EmulationPixel8Overlay \
     SystemUIEmulationPixel8Overlay \
     EmulationPixel7ProOverlay \
