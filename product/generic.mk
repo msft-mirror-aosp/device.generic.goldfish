@@ -155,15 +155,6 @@ ifeq ($(TARGET_PRODUCT_PROP),)
 TARGET_PRODUCT_PROP := $(LOCAL_PATH)/bluetooth.prop
 endif
 
-# Experimental Feature (Uwb | b/237088064)
-ifneq ($(filter %_uwb, $(TARGET_PRODUCT)),)
-    PRODUCT_PACKAGES += \
-        com.android.hardware.uwb \
-        android.hardware.uwb-service \
-        UwbOverlay
-    PRODUCT_VENDOR_PROPERTIES += ro.vendor.uwb.dev=/dev/hvc2
-endif
-
 PRODUCT_PACKAGES += \
     android.hardware.security.keymint-service
 PRODUCT_COPY_FILES += \
@@ -366,12 +357,6 @@ ifneq ($(PRODUCT_IS_ATV_SDK),true)
     PRODUCT_COPY_FILES+= \
         device/generic/goldfish/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml
 endif
-endif
-
-# Experimental Feature (Uwb | b/237088064)
-ifneq ($(filter %_uwb, $(TARGET_PRODUCT)),)
-    PRODUCT_COPY_FILES += \
-        frameworks/native/data/etc/android.hardware.uwb.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.uwb.xml
 endif
 
 # Goldfish uses 6.X kernels.

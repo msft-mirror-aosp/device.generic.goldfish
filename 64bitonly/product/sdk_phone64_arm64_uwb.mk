@@ -18,6 +18,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/etc/advancedFeatures.ini.uwb:advancedFeatures.ini \
 
 $(call inherit-product, device/generic/goldfish/64bitonly/product/sdk_phone64_arm64.mk)
+$(call inherit-product, device/generic/goldfish/product/uwb.mk)
 
 PRODUCT_BRAND := Android
 PRODUCT_NAME := sdk_phone64_arm64_uwb
