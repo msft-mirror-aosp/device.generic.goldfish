@@ -12,15 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
+PRODUCT_PACKAGES += \
+    com.android.hardware.uwb \
+    android.hardware.uwb-service \
+    UwbOverlay
+PRODUCT_VENDOR_PROPERTIES += ro.vendor.uwb.dev=/dev/hvc2
 PRODUCT_COPY_FILES += \
-    device/generic/goldfish/data/etc/advancedFeatures.ini.uwb:advancedFeatures.ini \
-
-$(call inherit-product, device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk)
-$(call inherit-product, device/generic/goldfish/product/uwb.mk)
-
-PRODUCT_BRAND := Android
-PRODUCT_NAME := sdk_phone64_x86_64_uwb
-PRODUCT_DEVICE := emu64x
-PRODUCT_MODEL := Android SDK built for x86_64_uwb
+    frameworks/native/data/etc/android.hardware.uwb.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.uwb.xml
