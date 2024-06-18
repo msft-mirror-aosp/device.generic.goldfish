@@ -12,11 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-# Enable large page size support
-PRODUCT_MAX_PAGE_SIZE_SUPPORTED := 16384
-PRODUCT_NO_BIONIC_PAGE_SIZE_MACRO := true
-
-# Verify all prebuilts are compatible with 16 KB mode as well
-PRODUCT_CHECK_PREBUILT_MAX_PAGE_SIZE := true
+PRODUCT_PACKAGES += \
+    com.android.hardware.uwb \
+    android.hardware.uwb-service \
+    UwbOverlay
+PRODUCT_VENDOR_PROPERTIES += ro.vendor.uwb.dev=/dev/hvc2
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.uwb.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.uwb.xml
