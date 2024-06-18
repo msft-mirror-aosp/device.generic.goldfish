@@ -169,6 +169,7 @@ service wpa_supplicant /vendor/bin/hw/wpa_supplicant -Dnl80211 -iwlan0 -c/vendor
     group system wifi inet
     oneshot
     disabled
+    user root
 
 on property:vendor.qemu.vport.bluetooth=*
     symlink ${vendor.qemu.vport.bluetooth} /dev/bluetooth0
@@ -177,6 +178,15 @@ service bt_vhci_forwarder /vendor/bin/bt_vhci_forwarder -virtio_console_dev=/dev
     class main
     user bluetooth
     group root bluetooth
+
+on property:vendor.qemu.vport.uwb=*
+    symlink ${vendor.qemu.vport.uwb} /dev/hvc2
+    start vendor.uwb_hal
+
+service vendor.uwb_hal /vendor/bin/hw/android.hardware.uwb-service /dev/hvc2
+    class hal
+    user uwb
+    disabled
 
 # Enable zram only once per boot. From:
 
