@@ -15,7 +15,7 @@
 #
 
 # create skin related configuration files and symlinks
-#
+# 
 
 ifeq ($(EMULATOR_DEVICE_TYPE_FOLDABLE), true)
 LOCAL_PATH := $(call my-dir)
