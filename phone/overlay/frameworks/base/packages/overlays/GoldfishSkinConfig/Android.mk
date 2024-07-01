@@ -30,7 +30,9 @@ LOCAL_LICENSE_CONDITIONS := notice
 
 # following is **needed**, as the framework only looks at vendor/etc/displayconfig
 # that may change in the future, such as V or later
-LOCAL_POST_INSTALL_CMD := ln -sf /data/system/displayconfig $(PRODUCT_OUT)/vendor/etc/displayconfig
+LOCAL_POST_INSTALL_CMD := \
+    mkdir -p $(PRODUCT_OUT)/vendor/etc; \
+    ln -sf /data/system/displayconfig $(PRODUCT_OUT)/vendor/etc/displayconfig
 
 # following is not needed, but keep a note here, as the framework already
 # take /data/system/devicestate/ before accessing /vendor/etc/devicestate
