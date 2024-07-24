@@ -17,6 +17,7 @@
 package com.android.emulatorprovisionlib;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -32,6 +33,8 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
+import android.os.UserHandle;
+import android.os.UserManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.InputDevice;
@@ -40,13 +43,13 @@ import com.android.internal.widget.LockPatternUtils;
 
 public abstract class ProvisionActivity extends Activity {
     protected abstract String TAG();
-    private StatusBarManager mStatusBarManager;
+    protected StatusBarManager mStatusBarManager;
 
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        if (Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1) {
+        if (provisionRequired()) {
             preProvivion();
             doProvision();
             postProvision();
@@ -60,13 +63,19 @@ public abstract class ProvisionActivity extends Activity {
 
     protected void preProvivion() {
         final Context appContext = getApplicationContext();
-        mStatusBarManager = appContext.getSystemService(StatusBarManager.class);
+        if (!isVisibleBackgroundUser(appContext)) {
+            mStatusBarManager = appContext.getSystemService(StatusBarManager.class);
+        }
 
-        mStatusBarManager.setDisabledForSetup(true);
+        if (mStatusBarManager != null) {
+            mStatusBarManager.setDisabledForSetup(true);
+        }
     }
 
     protected void postProvision() {
-        mStatusBarManager.setDisabledForSetup(false);
+        if (mStatusBarManager != null) {
+            mStatusBarManager.setDisabledForSetup(false);
+        }
 
         removeSelf();
 
@@ -97,6 +106,12 @@ public abstract class ProvisionActivity extends Activity {
     protected void provisionWifi(final String ssid) {
         Settings.Global.putInt(getContentResolver(), Settings.Global.TETHER_OFFLOAD_DISABLED, 1);
 
+        final WifiManager mWifiManager = getApplicationContext().getSystemService(WifiManager.class);
+        if (!mWifiManager.setWifiEnabled(true)) {
+            Log.e(TAG(), "Unable to turn on Wi-Fi");
+            return;
+        }
+
         final int ADD_NETWORK_FAIL = -1;
         final String quotedSsid = "\"" + ssid + "\"";
 
@@ -104,7 +119,6 @@ public abstract class ProvisionActivity extends Activity {
         config.SSID = quotedSsid;
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
 
-        final WifiManager mWifiManager = getApplicationContext().getSystemService(WifiManager.class);
         final int netId = mWifiManager.addNetwork(config);
 
         if (netId == ADD_NETWORK_FAIL || !mWifiManager.enableNetwork(netId, true)) {
@@ -114,6 +128,8 @@ public abstract class ProvisionActivity extends Activity {
 
     // Set physical keyboard layout based on the system property set by emulator host.
     protected void provisionKeyboard(final String deviceName) {
+        Settings.Secure.putInt(getContentResolver(), Settings.Secure.SHOW_IME_WITH_HARD_KEYBOARD, 1);
+
         final String layoutName = SystemProperties.get("vendor.qemu.keyboard_layout");
         final InputDevice device = getKeyboardDevice(deviceName);
         if (device != null && !layoutName.isEmpty()) {
@@ -224,5 +240,20 @@ public abstract class ProvisionActivity extends Activity {
                 return;
             }
         }
+    }
+
+    protected boolean provisionRequired() {
+        return Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1;
+    }
+
+    protected boolean isVisibleBackgroundUser(Context context) {
+        if (!UserManager.isVisibleBackgroundUsersEnabled()) {
+            return false;
+        }
+        UserHandle user = context.getUser();
+        if (user.isSystem() || user.getIdentifier() == ActivityManager.getCurrentUser()) {
+            return false;
+        }
+        return true;
     }
 }
