@@ -11,7 +11,6 @@
 /dev/block/vde               u:object_r:system_block_device:s0
 /dev/block/zram0             u:object_r:swap_block_device:s0
 
-/dev/goldfish_pipe           u:object_r:qemu_device:s0
 /dev/goldfish_pipe_dprctd    u:object_r:qemu_device:s0
 /dev/vport.*p.*                u:object_r:qemu_device:s0
 /dev/goldfish_sync           u:object_r:qemu_device:s0
@@ -29,13 +28,15 @@
 # Bluetooth
 /dev/vhci                    u:object_r:bt_device:s0
 /dev/bluetooth0              u:object_r:bt_device:s0
+# UWB
+/dev/hvc2                    u:object_r:uwb_device:s0
 
 
 /system_ext/bin/init\.ranchu\.adb\.setup\.sh u:object_r:goldfish_system_setup_exec:s0
+/vendor/bin/init_ranchu_device_state\.sh u:object_r:init_ranchu_device_state_exec:s0
 /vendor/bin/init\.ranchu-core\.sh u:object_r:goldfish_setup_exec:s0
 /vendor/bin/init\.ranchu-net\.sh u:object_r:goldfish_setup_exec:s0
 /vendor/bin/dlkm_loader  u:object_r:dlkm_loader_exec:s0
-/vendor/bin/qemu-export-property    u:object_r:qemu_export_property_exec:s0
 /vendor/bin/qemu-props       u:object_r:qemu_props_exec:s0
 /vendor/bin/mac80211_create_radios u:object_r:mac80211_create_radios_exec:s0
 /vendor/bin/hw/libgoldfish-rild               u:object_r:rild_exec:s0

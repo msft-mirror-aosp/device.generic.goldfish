@@ -31,6 +31,9 @@ PRODUCT_SOONG_NAMESPACES += \
 
 TARGET_USES_MKE2FS := true
 
+# Set Vendor SPL to match platform
+VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
+
 # RKPD
 PRODUCT_PRODUCT_PROPERTIES += \
     remote_provisioning.enable_rkpd=true \
@@ -55,10 +58,12 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.surface_flinger.supports_background_blur=1 \
     ro.surface_flinger.use_color_management=false \
     ro.zygote.disable_gl_preload=1 \
+    debug.renderengine.backend=skiaglthreaded \
     debug.sf.vsync_reactor_ignore_present_fences=true \
     debug.stagefright.c2inputsurface=-1 \
     debug.stagefright.ccodec=4 \
     graphics.gpu.profiler.support=true \
+    persist.sys.usb.config="" \
     persist.sys.zram_enabled=1 \
     wifi.direct.interface=p2p-dev-wlan0 \
     wifi.interface=wlan0 \
@@ -72,7 +77,6 @@ PRODUCT_PACKAGES += \
     libandroidemu \
     libOpenglCodecCommon \
     libOpenglSystemCommon \
-    qemu-export-property \
     qemu-props \
     stagefright \
     android.hardware.graphics.composer3-service.ranchu \
@@ -87,6 +91,7 @@ PRODUCT_PACKAGES += \
     local_time.default \
     SdkSetup \
     goldfish_overlay_connectivity_gsi \
+    RanchuCommonOverlay \
     libGoldfishProfiler \
     dlkm_loader
 
@@ -112,6 +117,8 @@ PRODUCT_PACKAGES += \
 
 DEVICE_MANIFEST_FILE += device/generic/goldfish/radio/manifest.radio.xml
 DISABLE_RILD_OEM_HOOK := true
+# For customize cflags for libril share library building by soong.
+$(call soong_config_set,ril,disable_rild_oem_hook,true)
 endif
 
 ifneq ($(EMULATOR_VENDOR_NO_BIOMETRICS), true)
@@ -300,6 +307,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/etc/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
     device/generic/goldfish/data/etc/local.prop:data/local.prop \
     device/generic/goldfish/init.ranchu.adb.setup.sh:$(TARGET_COPY_OUT_SYSTEM_EXT)/bin/init.ranchu.adb.setup.sh \
+    device/generic/goldfish/init_ranchu_device_state.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init_ranchu_device_state.sh \
     device/generic/goldfish/init.ranchu-core.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.ranchu-core.sh \
     device/generic/goldfish/init.ranchu-net.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.ranchu-net.sh \
     device/generic/goldfish/init.ranchu.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.ranchu.rc \
