@@ -104,7 +104,6 @@ ifneq ($(filter %_minigbm, $(TARGET_PRODUCT)),)
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=minigbm
 PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator-service.minigbm \
-    android.hardware.graphics.mapper@4.0-impl.minigbm \
     mapper.minigbm
 else
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
@@ -150,6 +149,10 @@ PRODUCT_PACKAGES += \
     libGLESv1_CM_angle \
     libGLESv2_angle
 endif
+
+# Enable Thread Network HAL with simulation RCP
+PRODUCT_PACKAGES += \
+    com.android.hardware.threadnetwork-simulation-rcp
 
 # Enable bluetooth
 PRODUCT_PACKAGES += \
