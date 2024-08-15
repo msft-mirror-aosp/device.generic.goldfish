@@ -14,9 +14,21 @@
 # limitations under the License.
 #
 
-# Enable large page size support
-PRODUCT_MAX_PAGE_SIZE_SUPPORTED := 16384
-PRODUCT_NO_BIONIC_PAGE_SIZE_MACRO := true
+# arm64 emulator specific definitions
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_VARIANT := generic
+TARGET_CPU_ABI := arm64-v8a
 
-# Verify all prebuilts are compatible with 16 KB mode as well
-PRODUCT_CHECK_PREBUILT_MAX_PAGE_SIZE := true
+TARGET_2ND_ARCH_VARIANT := armv8-a
+TARGET_2ND_CPU_VARIANT := generic
+
+TARGET_NATIVE_BRIDGE_ARCH := riscv64
+TARGET_NATIVE_BRIDGE_ARCH_VARIANT :=
+TARGET_NATIVE_BRIDGE_CPU_VARIANT := generic
+TARGET_NATIVE_BRIDGE_ABI := riscv64
+
+include device/generic/goldfish/board/BoardConfigCommon.mk
+
+BOARD_BOOTIMAGE_PARTITION_SIZE := 0x02000000
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 576716800

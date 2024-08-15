@@ -17,25 +17,6 @@
 LOCAL_PATH := $(call my-dir)
 
 ifneq ($(filter $(LOCAL_PATH),$(PRODUCT_SOONG_NAMESPACES)),)
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish/data,))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish/input,))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish/wifi,))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish/camera,))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,hals.conf))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,init.qemu-adb-keys.sh))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,init.system_ext.rc))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,.json))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,ueventd.rc))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,wpa_supplicant.conf))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,media_profiles_V1_0.xml))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,init.ranchu.rc))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,fstab.ranchu))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,display_settings.xml))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,display_settings_freeform.xml))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,device_state_configuration.xml))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,init.ranchu-core.sh))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,init.ranchu-net.sh))
-  $(eval $(call declare-1p-copy-files,device/generic/goldfish,audio_policy_configuration.xml))
 
   ifeq ($(BUILD_QEMU_IMAGES),true)
     QEMU_CUSTOMIZATIONS := true
@@ -55,6 +36,7 @@ $(INSTALLED_EMULATOR_INFO_TXT_TARGET): $(emulator_info_txt)
     subdir_makefiles=$(call first-makefiles-under,$(LOCAL_PATH))
     $(foreach mk,$(subdir_makefiles),$(info including $(mk) ...)$(eval include $(mk)))
 
+    include device/generic/goldfish/tools/emu_extra_imgs.mk
     include device/generic/goldfish/tasks/emu_img_zip.mk
   endif
 endif

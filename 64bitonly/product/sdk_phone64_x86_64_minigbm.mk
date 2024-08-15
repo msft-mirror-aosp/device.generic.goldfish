@@ -14,9 +14,13 @@
 # limitations under the License.
 #
 
-# Enable large page size support
-PRODUCT_MAX_PAGE_SIZE_SUPPORTED := 16384
-PRODUCT_NO_BIONIC_PAGE_SIZE_MACRO := true
+PRODUCT_COPY_FILES += \
+    device/generic/goldfish/data/etc/advancedFeatures.ini.minigbm:advancedFeatures.ini \
+    device/generic/goldfish/data/etc/config.ini.nexus5:config.ini
 
-# Verify all prebuilts are compatible with 16 KB mode as well
-PRODUCT_CHECK_PREBUILT_MAX_PAGE_SIZE := true
+$(call inherit-product, device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk)
+
+PRODUCT_BRAND := Android
+PRODUCT_NAME := sdk_phone64_x86_64_minigbm
+PRODUCT_DEVICE := emu64x
+PRODUCT_MODEL := Android SDK built for x86_64_minigbm
