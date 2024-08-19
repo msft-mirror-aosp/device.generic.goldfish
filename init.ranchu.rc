@@ -106,6 +106,7 @@ on property:dev.bootcomplete=1 && property:vendor.qemu.dev.bootcomplete=0
     setprop vendor.qemu.dev.bootcomplete 1
     start qemu-props-bootcomplete
     start ranchu-setup
+    start ranchu-adb-setup
 
 on post-fs-data && property:ro.boot.qemu.virtiowifi=1
     start ranchu-net
@@ -179,6 +180,15 @@ service bt_vhci_forwarder /vendor/bin/bt_vhci_forwarder -virtio_console_dev=/dev
     user bluetooth
     group root bluetooth
 
+on property:vendor.qemu.vport.uwb=*
+    symlink ${vendor.qemu.vport.uwb} /dev/hvc2
+    start vendor.uwb_hal
+
+service vendor.uwb_hal /vendor/bin/hw/android.hardware.uwb-service /dev/hvc2
+    class hal
+    user uwb
+    disabled
+
 # Enable zram only once per boot. From:
 
 # We want one opportunity per boot to enable zram, so we
@@ -188,6 +198,7 @@ service bt_vhci_forwarder /vendor/bin/bt_vhci_forwarder -virtio_console_dev=/dev
 
 on property:sys.boot_completed=1
     trigger sys-boot-completed-set
+    start vendor.ril-daemon
 
 on sys-boot-completed-set && property:persist.sys.zram_enabled=1
     swapon_all /vendor/etc/fstab.${ro.hardware}

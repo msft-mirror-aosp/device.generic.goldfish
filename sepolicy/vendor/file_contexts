@@ -28,6 +28,8 @@
 # Bluetooth
 /dev/vhci                    u:object_r:bt_device:s0
 /dev/bluetooth0              u:object_r:bt_device:s0
+# UWB
+/dev/hvc2                    u:object_r:uwb_device:s0
 
 
 /system_ext/bin/init\.ranchu\.adb\.setup\.sh u:object_r:goldfish_system_setup_exec:s0
@@ -70,7 +72,6 @@
 /vendor/lib(64)?/hw/android\.hardware\.graphics\.mapper@3\.0-impl-ranchu\.so   u:object_r:same_process_hal_file:s0
 /vendor/lib(64)?/libGoldfishProfiler\.so       u:object_r:same_process_hal_file:s0
 /vendor/lib(64)?/dri/.* u:object_r:same_process_hal_file:s0
-/vendor/lib(64)?/hw/android\.hardware\.graphics\.mapper@4\.0-impl\.minigbm\.so u:object_r:same_process_hal_file:s0
 /vendor/lib(64)?/hw/mapper\.minigbm\.so u:object_r:same_process_hal_file:s0
 /vendor/lib(64)?/libminigbm_gralloc.so  u:object_r:same_process_hal_file:s0
 /vendor/lib(64)?/libminigbm_gralloc4_utils.so  u:object_r:same_process_hal_file:s0

@@ -104,7 +104,6 @@ ifneq ($(filter %_minigbm, $(TARGET_PRODUCT)),)
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=minigbm
 PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator-service.minigbm \
-    android.hardware.graphics.mapper@4.0-impl.minigbm \
     mapper.minigbm
 else
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
@@ -122,6 +121,8 @@ PRODUCT_PACKAGES += \
 
 DEVICE_MANIFEST_FILE += device/generic/goldfish/radio/manifest.radio.xml
 DISABLE_RILD_OEM_HOOK := true
+# For customize cflags for libril share library building by soong.
+$(call soong_config_set,ril,disable_rild_oem_hook,true)
 endif
 
 ifneq ($(EMULATOR_VENDOR_NO_BIOMETRICS), true)
@@ -148,6 +149,10 @@ PRODUCT_PACKAGES += \
     libGLESv1_CM_angle \
     libGLESv2_angle
 endif
+
+# Enable Thread Network HAL with simulation RCP
+PRODUCT_PACKAGES += \
+    com.android.hardware.threadnetwork-simulation-rcp
 
 # Enable bluetooth
 PRODUCT_PACKAGES += \
@@ -205,6 +210,15 @@ PRODUCT_PACKAGES += \
     SystemUIEmulationPixel3aXLOverlay \
     EmulationPixel2XLOverlay \
     NavigationBarMode2ButtonOverlay \
+
+# Enable Uwb
+PRODUCT_PACKAGES += \
+    com.android.hardware.uwb \
+    android.hardware.uwb-service \
+    UwbOverlay
+PRODUCT_VENDOR_PROPERTIES += ro.vendor.uwb.dev=/dev/hvc2
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.uwb.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.uwb.xml
 
 ifneq ($(EMULATOR_VENDOR_NO_GNSS),true)
 PRODUCT_PACKAGES += android.hardware.gnss-service.ranchu
