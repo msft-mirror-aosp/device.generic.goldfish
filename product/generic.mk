@@ -107,9 +107,7 @@ PRODUCT_PACKAGES += \
     mapper.minigbm
 else
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
-PRODUCT_PACKAGES += \
-    android.hardware.graphics.allocator@3.0-service.ranchu \
-    android.hardware.graphics.mapper@3.0-impl-ranchu
+PRODUCT_PACKAGES += android.hardware.graphics.allocator-service.ranchu
 endif
 
 ifneq ($(EMULATOR_DISABLE_RADIO),true)
