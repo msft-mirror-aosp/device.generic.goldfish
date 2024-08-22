@@ -23,14 +23,6 @@ package {
     default_applicable_licenses: ["device_generic_goldfish_license"],
 }
 
-prebuilt_etc {
-    name: "android.hardware.sensors@2.1-impl.ranchu.etc",
-    vendor: true,
-    sub_dir: "sensors",
-    filename: "hals.conf",
-    src: "hals.conf"
-}
-
 filegroup {
     name: "android.hardware.sensors@2.1-impl.virtual_srcs",
     srcs: [
@@ -81,5 +73,4 @@ cc_library_shared {
         "-DLOG_TAG=\"android.hardware.sensors@2.1-impl.ranchu\"",
         "-DANDROID_BASE_UNIQUE_FD_DISABLE_IMPLICIT_CONVERSION",
     ],
-    required: ["android.hardware.sensors@2.1-impl.ranchu.etc"],
 }
