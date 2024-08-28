@@ -2,7 +2,7 @@
 # and other files for distribution
 
 ifeq ($(filter $(TARGET_PRODUCT), qemu_trusty_arm64),)
-ifeq ($(filter $(MAKECMDGOALS), sdk win_sdk sdk_repo goog_emu_imgs),)
+ifeq ($(filter $(MAKECMDGOALS), sdk win_sdk sdk_repo),)
 emulator_img_source_prop := $(TARGET_OUT_INTERMEDIATES)/source.properties
 target_notice_file_txt := $(TARGET_OUT_INTERMEDIATES)/NOTICE.txt
 $(emulator_img_source_prop): $(PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP)
@@ -104,6 +104,10 @@ $(INTERNAL_EMULATOR_PACKAGE_TARGET): $(INTERNAL_EMULATOR_PACKAGE_TARGET_DEPENDEN
 
 .PHONY: emu_img_zip
 emu_img_zip: $(INTERNAL_EMULATOR_PACKAGE_TARGET)
+
+# TODO(b/361152997): replace goog_emu_imgs with emu_img_zip and retire this target
+.PHONY: goog_emu_imgs
+goog_emu_imgs: emu_img_zip
 
 INTERNAL_EMULATOR_KERNEL_TARGET := $(PRODUCT_OUT)/emu-gki-$(TARGET_KERNEL_USE).zip
 INTERNAL_GKI_SOURCE := $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/GKI-$(TARGET_KERNEL_USE)
