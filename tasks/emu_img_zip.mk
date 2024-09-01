@@ -1,8 +1,7 @@
 # Rules to generate a zip file that contains google emulator images
 # and other files for distribution
 
-ifeq ($(filter $(TARGET_PRODUCT), qemu_trusty_arm64),)
-ifeq ($(filter $(MAKECMDGOALS), sdk win_sdk sdk_repo goog_emu_imgs),)
+ifneq ($(filter sdk_% gcar_%, $(TARGET_PRODUCT)),)
 emulator_img_source_prop := $(TARGET_OUT_INTERMEDIATES)/source.properties
 target_notice_file_txt := $(TARGET_OUT_INTERMEDIATES)/NOTICE.txt
 $(emulator_img_source_prop): $(PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP)
@@ -90,6 +89,7 @@ INTERNAL_EMULATOR_PACKAGE_TARGET_DEPENDENCIES := \
 	$(FINAL_INSTALLED_QEMU_RAMDISKIMAGE) \
 	$(FINAL_INSTALLED_QEMU_VENDORIMAGE) \
 	$(EMULATOR_KERNEL_FILE) \
+	$(PRODUCT_OUT)/kernel_cmdline.txt \
 	$(ADVANCED_FEATURES_FILES) \
 	$(PRODUCT_OUT_DATA_FILES) \
 
@@ -98,12 +98,17 @@ $(INTERNAL_EMULATOR_PACKAGE_TARGET): $(INTERNAL_EMULATOR_PACKAGE_TARGET_DEPENDEN
 	$(hide) mkdir -p $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)
 	$(hide) $(foreach f,$(INTERNAL_EMULATOR_PACKAGE_FILES), $(ACP) $(f) $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)/$(notdir $(f));)
 	$(hide) $(foreach f,$(ADVANCED_FEATURES_FILES), $(ACP) $(f) $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)/advancedFeatures.ini;)
+	$(hide) $(ACP) $(PRODUCT_OUT)/kernel_cmdline.txt $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)
 	$(hide) ($(ACP) $(EMULATOR_KERNEL_FILE) $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)/${EMULATOR_KERNEL_DIST_NAME})
 	$(hide) $(ACP) -r $(PRODUCT_OUT)/data $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)
 	$(hide) $(SOONG_ZIP) -o $@ -C $(INTERNAL_EMULATOR_PACKAGE_SOURCE) -D $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/$(TARGET_CPU_ABI)
 
 .PHONY: emu_img_zip
 emu_img_zip: $(INTERNAL_EMULATOR_PACKAGE_TARGET)
+
+# TODO(b/361152997): replace goog_emu_imgs with emu_img_zip and retire this target
+.PHONY: goog_emu_imgs
+goog_emu_imgs: emu_img_zip
 
 INTERNAL_EMULATOR_KERNEL_TARGET := $(PRODUCT_OUT)/emu-gki-$(TARGET_KERNEL_USE).zip
 INTERNAL_GKI_SOURCE := $(INTERNAL_EMULATOR_PACKAGE_SOURCE)/GKI-$(TARGET_KERNEL_USE)
@@ -118,5 +123,4 @@ $(INTERNAL_EMULATOR_KERNEL_TARGET): $(INSTALLED_QEMU_RAMDISKIMAGE) $(EMULATOR_KE
 emu_kernel_zip: $(INTERNAL_EMULATOR_KERNEL_TARGET)
 
 $(call dist-for-goals-with-filenametag, emu_kernel_zip, $(INTERNAL_EMULATOR_KERNEL_TARGET))
-endif
 endif
