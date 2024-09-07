@@ -22,17 +22,15 @@
  * /system/etc/init.ranchu.rc exclusively.
  */
 
-#include <android-base/properties.h>
+#include <string_view>
 #include <android-base/unique_fd.h>
 #include <cutils/properties.h>
-#include <debug.h>
+#include <unistd.h>
 #include <qemu_pipe_bp.h>
 #include <qemud.h>
-#include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-
-#include <string_view>
+#include <stdio.h>
+#include <debug.h>
 
 namespace {
 constexpr char kBootPropertiesService[] = "boot-properties";
@@ -159,12 +157,13 @@ int main(const int argc, const char* argv[])
 
     sendHeartBeat();
     while (s_QemuMiscPipe >= 0) {
-        if (android::base::WaitForProperty(
-                    "vendor.qemu.dev.bootcomplete", "1",
-                    /*relative_timeout=*/std::chrono::seconds(5))) {
+        usleep(5000000); /* 5 seconds */
+        sendHeartBeat();
+        char temp[PROPERTY_VALUE_MAX];
+        property_get("vendor.qemu.dev.bootcomplete", temp, "");
+        if (strcmp(temp, "1") == 0) {
             break;
         }
-        sendHeartBeat();
     }
 
     while (s_QemuMiscPipe >= 0) {
