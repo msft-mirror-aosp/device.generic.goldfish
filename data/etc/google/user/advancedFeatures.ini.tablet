@@ -29,4 +29,3 @@ DeviceStateOnBoot = on
 HWCMultiConfigs = on
 VirtioSndCard = on
 DeviceKeyboardHasAssistKey = on
-AndroidVirtualizationFramework = on

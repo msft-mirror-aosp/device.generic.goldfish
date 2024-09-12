@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 The Android Open Source Project
+# Copyright (C) 2024 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-$(call inherit-product, device/generic/goldfish/product/handheld.mk)
+# sdk_phone64_arm64 with riscv64 translated
 
-$(call inherit-product, $(SRC_TARGET_DIR)/product/telephony_system_ext.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/telephony_vendor.mk)
+$(call inherit-product, device/generic/goldfish/64bitonly/product/sdk_phone64_arm64.mk)
 
-DEVICE_PACKAGE_OVERLAYS += device/generic/goldfish/phone/overlay
-PRODUCT_CHARACTERISTICS := emulator
+# TODO(b/303700901): Add riscv64 translation support.
 
-$(call inherit-product, device/generic/goldfish/product/generic.mk)
-
-PRODUCT_PACKAGES += GoldfishSkinConfig
+# Overrides
+PRODUCT_BRAND := Android
+PRODUCT_NAME := sdk_phone64_arm64_riscv64
+PRODUCT_DEVICE := emu64ar
+PRODUCT_MODEL := Android SDK built for arm64 with riscv64 translated
