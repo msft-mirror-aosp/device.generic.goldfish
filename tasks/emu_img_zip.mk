@@ -12,18 +12,12 @@ INTERNAL_EMULATOR_PACKAGE_FILES := \
 	$(target_notice_file_txt) \
 	$(emulator_img_source_prop) \
 	$(PRODUCT_OUT)/system/build.prop \
+	$(PRODUCT_OUT)/VerifiedBootParams.textproto \
 
 ifneq ($(filter $(TARGET_PRODUCT), sdk_goog3_x86 sdk_goog3_x86_64 sdk_goog3_x86_arm),)
 INTERNAL_EMULATOR_PACKAGE_FILES += \
 	$(HOST_OUT_EXECUTABLES)/dex2oat \
 	$(HOST_OUT_EXECUTABLES)/dex2oatd
-endif
-
-ifeq ($(BUILD_QEMU_IMAGES),true)
-ifeq ($(BOARD_AVB_ENABLE),true)
-INTERNAL_EMULATOR_PACKAGE_FILES += \
-	$(PRODUCT_OUT)/VerifiedBootParams.textproto
-endif
 endif
 
 INTERNAL_EMULATOR_PACKAGE_SOURCE := $(PRODUCT_OUT)/emulator
