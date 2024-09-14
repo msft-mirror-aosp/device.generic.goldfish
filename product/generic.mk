@@ -22,7 +22,6 @@ $(call inherit-product-if-exists, frameworks/native/build/phone-xhdpi-2048-dalvi
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 PRODUCT_SHIPPING_API_LEVEL := 35
-PRODUCT_FULL_TREBLE_OVERRIDE := true
 DEVICE_MANIFEST_FILE += device/generic/goldfish/manifest.xml
 
 PRODUCT_SOONG_NAMESPACES += \
@@ -164,9 +163,6 @@ PRODUCT_PACKAGES += \
     android.hardware.security.keymint-service
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.keystore.app_attest_key.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.keystore.app_attest_key.xml
-
-# b/361152997: move to the phone specific place
-$(call inherit-product, device/generic/goldfish/product/phone_overlays.mk)
 
 # Enable Uwb
 PRODUCT_PACKAGES += \
