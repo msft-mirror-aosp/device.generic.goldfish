@@ -21,8 +21,7 @@ $(call inherit-product-if-exists, frameworks/native/build/phone-xhdpi-2048-dalvi
 # Enable Scoped Storage related
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
-PRODUCT_SHIPPING_API_LEVEL := 34
-PRODUCT_FULL_TREBLE_OVERRIDE := true
+PRODUCT_SHIPPING_API_LEVEL := 35
 DEVICE_MANIFEST_FILE += device/generic/goldfish/manifest.xml
 
 PRODUCT_SOONG_NAMESPACES += \
@@ -38,6 +37,11 @@ VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
 PRODUCT_PRODUCT_PROPERTIES += \
     remote_provisioning.enable_rkpd=true \
     remote_provisioning.hostname=remoteprovisioning.googleapis.com
+
+PRODUCT_PACKAGES += \
+    hwservicemanager \
+    android.hidl.allocator@1.0-service
+
 
 PRODUCT_VENDOR_PROPERTIES += \
     ro.control_privapp_permissions=enforce \
@@ -159,9 +163,6 @@ PRODUCT_PACKAGES += \
     android.hardware.security.keymint-service
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.keystore.app_attest_key.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.keystore.app_attest_key.xml
-
-# b/361152997: move to the phone specific place
-$(call inherit-product, device/generic/goldfish/product/phone_overlays.mk)
 
 # Enable Uwb
 PRODUCT_PACKAGES += \
@@ -311,6 +312,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
     device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
     device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
+    device/generic/goldfish/pixel_fold/sensor_hinge_angle.xml:/data/misc/pixel_fold/extra_feature.xml \
     device/generic/goldfish/data/etc/config.ini:config.ini \
     device/generic/goldfish/wifi/wpa_supplicant.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant.conf \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \
