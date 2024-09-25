@@ -125,9 +125,7 @@ endif
 ifneq ($(EMULATOR_VENDOR_NO_BIOMETRICS), true)
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.ranchu \
-    android.hardware.biometrics.face-service.example \
-    android.hardware.fingerprint.prebuilt.xml \
-    android.hardware.biometrics.face.prebuilt.xml
+    android.hardware.fingerprint.prebuilt.xml
 endif
 
 ifneq ($(BUILD_EMULATOR_OPENGL),false)
