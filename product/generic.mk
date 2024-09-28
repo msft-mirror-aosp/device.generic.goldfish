@@ -265,7 +265,7 @@ PRODUCT_PACKAGES += \
     android.hardware.power-service.example \
     android.hardware.power.stats-service.example \
     com.android.hardware.rebootescrow \
-    android.hardware.thermal@2.0-service.mock \
+    com.android.hardware.thermal \
     android.hardware.vibrator-service.example
 
 # TVs don't use a hardware identity service.
