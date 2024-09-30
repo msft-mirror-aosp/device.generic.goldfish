@@ -256,7 +256,7 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
 PRODUCT_PACKAGES += \
     android.hardware.atrace@1.0-service \
     com.android.hardware.authsecret \
-    android.hardware.contexthub-service.example \
+    com.android.hardware.contexthub \
     com.android.hardware.dumpstate \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
