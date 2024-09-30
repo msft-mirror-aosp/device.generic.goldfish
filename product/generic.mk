@@ -257,7 +257,7 @@ PRODUCT_PACKAGES += \
     android.hardware.atrace@1.0-service \
     com.android.hardware.authsecret \
     android.hardware.contexthub-service.example \
-    android.hardware.dumpstate-service.example \
+    com.android.hardware.dumpstate \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
     android.hardware.lights-service.example \
