@@ -262,8 +262,7 @@ PRODUCT_PACKAGES += \
     android.hardware.health.storage-service.default \
     android.hardware.lights-service.example \
     com.android.hardware.neuralnetworks \
-    android.hardware.power-service.example \
-    android.hardware.power.stats-service.example \
+    com.android.hardware.power \
     com.android.hardware.rebootescrow \
     com.android.hardware.thermal \
     com.android.hardware.vibrator
