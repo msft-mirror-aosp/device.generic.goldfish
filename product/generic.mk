@@ -33,6 +33,9 @@ TARGET_USES_MKE2FS := true
 # Set Vendor SPL to match platform
 VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
 
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+    ro.surface_flinger.game_default_frame_rate_override=60
+
 # RKPD
 PRODUCT_PRODUCT_PROPERTIES += \
     remote_provisioning.enable_rkpd=true \
@@ -253,17 +256,16 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
 PRODUCT_PACKAGES += \
     android.hardware.atrace@1.0-service \
     com.android.hardware.authsecret \
-    android.hardware.contexthub-service.example \
-    android.hardware.dumpstate-service.example \
+    com.android.hardware.contexthub \
+    com.android.hardware.dumpstate \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
     android.hardware.lights-service.example \
     com.android.hardware.neuralnetworks \
-    android.hardware.power-service.example \
-    android.hardware.power.stats-service.example \
+    com.android.hardware.power \
     com.android.hardware.rebootescrow \
-    android.hardware.thermal@2.0-service.mock \
-    android.hardware.vibrator-service.example
+    com.android.hardware.thermal \
+    com.android.hardware.vibrator
 
 # TVs don't use a hardware identity service.
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
