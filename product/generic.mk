@@ -266,7 +266,7 @@ PRODUCT_PACKAGES += \
     android.hardware.power.stats-service.example \
     com.android.hardware.rebootescrow \
     com.android.hardware.thermal \
-    android.hardware.vibrator-service.example
+    com.android.hardware.vibrator
 
 # TVs don't use a hardware identity service.
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
