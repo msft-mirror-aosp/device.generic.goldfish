@@ -33,6 +33,9 @@ TARGET_USES_MKE2FS := true
 # Set Vendor SPL to match platform
 VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
 
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+    ro.surface_flinger.game_default_frame_rate_override=60
+
 # RKPD
 PRODUCT_PRODUCT_PROPERTIES += \
     remote_provisioning.enable_rkpd=true \
@@ -77,6 +80,7 @@ PRODUCT_PACKAGES += \
     android.hardware.drm-service-lazy.clearkey \
     android.hardware.gatekeeper@1.0-service.software \
     android.hardware.usb-service.example \
+    atrace \
     vulkan.ranchu \
     libandroidemu \
     libOpenglCodecCommon \
@@ -251,19 +255,17 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
 
 # "Hello, world!" HAL implementations, mostly for compliance
 PRODUCT_PACKAGES += \
-    android.hardware.atrace@1.0-service \
     com.android.hardware.authsecret \
-    android.hardware.contexthub-service.example \
-    android.hardware.dumpstate-service.example \
+    com.android.hardware.contexthub \
+    com.android.hardware.dumpstate \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
     android.hardware.lights-service.example \
     com.android.hardware.neuralnetworks \
-    android.hardware.power-service.example \
-    android.hardware.power.stats-service.example \
+    com.android.hardware.power \
     com.android.hardware.rebootescrow \
-    android.hardware.thermal@2.0-service.mock \
-    android.hardware.vibrator-service.example
+    com.android.hardware.thermal \
+    com.android.hardware.vibrator
 
 # TVs don't use a hardware identity service.
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
@@ -275,6 +277,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/empty_data_disk:data/empty_data_disk \
     device/generic/goldfish/data/etc/dtb.img:dtb.img \
     device/generic/goldfish/data/etc/encryptionkey.img:encryptionkey.img \
+    device/generic/goldfish/data/etc/atrace_categories.txt:$(TARGET_COPY_OUT_VENDOR)/etc/atrace/atrace_categories.txt \
     device/generic/goldfish/emulator-info.txt:data/misc/emulator/version.txt \
     device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
     device/generic/goldfish/radio/RadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
