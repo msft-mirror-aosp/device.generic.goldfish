@@ -22,7 +22,6 @@ $(call inherit-product-if-exists, frameworks/native/build/phone-xhdpi-2048-dalvi
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 PRODUCT_SHIPPING_API_LEVEL := 35
-PRODUCT_FULL_TREBLE_OVERRIDE := true
 DEVICE_MANIFEST_FILE += device/generic/goldfish/manifest.xml
 
 PRODUCT_SOONG_NAMESPACES += \
@@ -33,6 +32,9 @@ TARGET_USES_MKE2FS := true
 
 # Set Vendor SPL to match platform
 VENDOR_SECURITY_PATCH = $(PLATFORM_SECURITY_PATCH)
+
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+    ro.surface_flinger.game_default_frame_rate_override=60
 
 # RKPD
 PRODUCT_PRODUCT_PROPERTIES += \
@@ -67,7 +69,7 @@ PRODUCT_VENDOR_PROPERTIES += \
     debug.sf.vsync_reactor_ignore_present_fences=true \
     debug.stagefright.c2inputsurface=-1 \
     debug.stagefright.ccodec=4 \
-    graphics.gpu.profiler.support=true \
+    graphics.gpu.profiler.support=false \
     persist.sys.usb.config="" \
     persist.sys.zram_enabled=1 \
     wifi.direct.interface=p2p-dev-wlan0 \
@@ -78,6 +80,7 @@ PRODUCT_PACKAGES += \
     android.hardware.drm-service-lazy.clearkey \
     android.hardware.gatekeeper@1.0-service.software \
     android.hardware.usb-service.example \
+    atrace \
     vulkan.ranchu \
     libandroidemu \
     libOpenglCodecCommon \
@@ -107,9 +110,7 @@ PRODUCT_PACKAGES += \
     mapper.minigbm
 else
 PRODUCT_VENDOR_PROPERTIES += ro.hardware.gralloc=ranchu
-PRODUCT_PACKAGES += \
-    android.hardware.graphics.allocator@3.0-service.ranchu \
-    android.hardware.graphics.mapper@3.0-impl-ranchu
+PRODUCT_PACKAGES += android.hardware.graphics.allocator-service.ranchu
 endif
 
 ifneq ($(EMULATOR_DISABLE_RADIO),true)
@@ -128,12 +129,7 @@ endif
 ifneq ($(EMULATOR_VENDOR_NO_BIOMETRICS), true)
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.fingerprint-service.ranchu \
-    android.hardware.biometrics.face-service.example \
-
-PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.fingerprint.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.fingerprint.xml \
-    frameworks/native/data/etc/android.hardware.biometrics.face.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.biometrics.face.xml \
-
+    android.hardware.fingerprint.prebuilt.xml
 endif
 
 ifneq ($(BUILD_EMULATOR_OPENGL),false)
@@ -170,47 +166,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.keystore.app_attest_key.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.keystore.app_attest_key.xml
 
-PRODUCT_PACKAGES += \
-    DisplayCutoutEmulationEmu01Overlay \
-    EmulationPixelFoldOverlay \
-    SystemUIEmulationPixelFoldOverlay \
-    EmulationPixel8ProOverlay \
-    SystemUIEmulationPixel8ProOverlay \
-    EmulationPixel8aOverlay \
-    SystemUIEmulationPixel8aOverlay \
-    EmulationPixel8Overlay \
-    SystemUIEmulationPixel8Overlay \
-    EmulationPixel7ProOverlay \
-    SystemUIEmulationPixel7ProOverlay \
-    EmulationPixel7Overlay \
-    SystemUIEmulationPixel7Overlay \
-    EmulationPixel7aOverlay \
-    SystemUIEmulationPixel7aOverlay \
-    EmulationPixel6ProOverlay \
-    SystemUIEmulationPixel6ProOverlay \
-    EmulationPixel6Overlay \
-    SystemUIEmulationPixel6Overlay \
-    EmulationPixel6aOverlay \
-    SystemUIEmulationPixel6aOverlay \
-    EmulationPixel5Overlay \
-    SystemUIEmulationPixel5Overlay \
-    EmulationPixel4XLOverlay \
-    SystemUIEmulationPixel4XLOverlay \
-    EmulationPixel4Overlay \
-    SystemUIEmulationPixel4Overlay \
-    EmulationPixel4aOverlay \
-    SystemUIEmulationPixel4aOverlay \
-    EmulationPixel3XLOverlay \
-    SystemUIEmulationPixel3XLOverlay \
-    EmulationPixel3Overlay \
-    SystemUIEmulationPixel3Overlay \
-    EmulationPixel3aOverlay \
-    SystemUIEmulationPixel3aOverlay \
-    EmulationPixel3aXLOverlay \
-    SystemUIEmulationPixel3aXLOverlay \
-    EmulationPixel2XLOverlay \
-    NavigationBarMode2ButtonOverlay \
-
 # Enable Uwb
 PRODUCT_PACKAGES += \
     com.android.hardware.uwb \
@@ -245,18 +200,24 @@ PRODUCT_PACKAGES += \
     android.hardware.camera.provider.ranchu \
     android.hardware.camera.provider@2.7-service-google \
     libgooglecamerahwl_impl \
+    android.hardware.camera.flash-autofocus.prebuilt.xml \
+    android.hardware.camera.concurrent.prebuilt.xml \
+    android.hardware.camera.front.prebuilt.xml \
+    android.hardware.camera.full.prebuilt.xml \
+    android.hardware.camera.raw.prebuilt.xml \
+
+ifeq (,$(filter %_arm64,$(TARGET_PRODUCT)))  # TARGET_ARCH is not available here
+CODECS_PERFORMANCE_C2_PROFILE := codecs_performance_c2.xml
+else
+CODECS_PERFORMANCE_C2_PROFILE := codecs_performance_c2_arm64.xml
+endif
 
 PRODUCT_COPY_FILES += \
     device/generic/goldfish/camera/media/profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_V1_0.xml \
     device/generic/goldfish/camera/media/codecs_google_video_default.xml:${TARGET_COPY_OUT_VENDOR}/etc/media_codecs_google_video.xml \
     device/generic/goldfish/camera/media/codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml \
     device/generic/goldfish/camera/media/codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml \
-    device/generic/goldfish/camera/media/codecs_performance_c2.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance_c2.xml \
-    frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.flash-autofocus.xml \
-    frameworks/native/data/etc/android.hardware.camera.concurrent.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.concurrent.xml \
-    frameworks/native/data/etc/android.hardware.camera.front.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.front.xml \
-    frameworks/native/data/etc/android.hardware.camera.full.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.full.xml \
-    frameworks/native/data/etc/android.hardware.camera.raw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.raw.xml \
+    device/generic/goldfish/camera/media/$(CODECS_PERFORMANCE_C2_PROFILE):$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance_c2.xml \
     hardware/google/camera/devices/EmulatedCamera/hwl/configs/emu_camera_back.json:$(TARGET_COPY_OUT_VENDOR)/etc/config/emu_camera_back.json \
     hardware/google/camera/devices/EmulatedCamera/hwl/configs/emu_camera_front.json:$(TARGET_COPY_OUT_VENDOR)/etc/config/emu_camera_front.json \
     hardware/google/camera/devices/EmulatedCamera/hwl/configs/emu_camera_depth.json:$(TARGET_COPY_OUT_VENDOR)/etc/config/emu_camera_depth.json \
@@ -294,19 +255,17 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
 
 # "Hello, world!" HAL implementations, mostly for compliance
 PRODUCT_PACKAGES += \
-    android.hardware.atrace@1.0-service \
     com.android.hardware.authsecret \
-    android.hardware.contexthub-service.example \
-    android.hardware.dumpstate-service.example \
+    com.android.hardware.contexthub \
+    com.android.hardware.dumpstate \
     android.hardware.health-service.example \
     android.hardware.health.storage-service.default \
     android.hardware.lights-service.example \
     com.android.hardware.neuralnetworks \
-    android.hardware.power-service.example \
-    android.hardware.power.stats-service.example \
+    com.android.hardware.power \
     com.android.hardware.rebootescrow \
-    android.hardware.thermal@2.0-service.mock \
-    android.hardware.vibrator-service.example
+    com.android.hardware.thermal \
+    com.android.hardware.vibrator
 
 # TVs don't use a hardware identity service.
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
@@ -314,14 +273,24 @@ ifneq ($(PRODUCT_IS_ATV_SDK),true)
         android.hardware.identity-service.example
 endif
 
+ifeq ($(EMULATOR_DEVICE_TYPE_FOLDABLE),true)
+    PRODUCT_COPY_FILES += \
+        device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
+        device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
+        device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
+        device/generic/goldfish/pixel_fold/sensor_hinge_angle.xml:/data/misc/pixel_fold/extra_feature.xml
+endif
+
 PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/empty_data_disk:data/empty_data_disk \
     device/generic/goldfish/data/etc/dtb.img:dtb.img \
     device/generic/goldfish/data/etc/encryptionkey.img:encryptionkey.img \
+    device/generic/goldfish/data/etc/atrace_categories.txt:$(TARGET_COPY_OUT_VENDOR)/etc/atrace/atrace_categories.txt \
     device/generic/goldfish/emulator-info.txt:data/misc/emulator/version.txt \
     device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
     device/generic/goldfish/radio/RadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
     device/generic/goldfish/data/etc/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
+    device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml \
     device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0_for_CtsCarrierApiTestCases.xml:data/misc/modem_simulator/iccprofile_for_carrierapitests.xml \
     device/generic/goldfish/data/etc/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
     device/generic/goldfish/data/etc/local.prop:data/local.prop \
@@ -350,10 +319,6 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/display_settings_app_compat.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_app_compat.xml \
     device/generic/goldfish/display_settings_freeform.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_freeform.xml \
     device/generic/goldfish/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
-    device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
-    device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
-    device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
-    device/generic/goldfish/pixel_fold/sensor_hinge_angle.xml:/data/misc/pixel_fold/extra_feature.xml \
     device/generic/goldfish/data/etc/config.ini:config.ini \
     device/generic/goldfish/wifi/wpa_supplicant.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant.conf \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \
