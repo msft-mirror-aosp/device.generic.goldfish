@@ -273,6 +273,14 @@ ifneq ($(PRODUCT_IS_ATV_SDK),true)
         android.hardware.identity-service.example
 endif
 
+ifeq ($(EMULATOR_DEVICE_TYPE_FOLDABLE),true)
+    PRODUCT_COPY_FILES += \
+        device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
+        device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
+        device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
+        device/generic/goldfish/pixel_fold/sensor_hinge_angle.xml:/data/misc/pixel_fold/extra_feature.xml
+endif
+
 PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/empty_data_disk:data/empty_data_disk \
     device/generic/goldfish/data/etc/dtb.img:dtb.img \
@@ -280,7 +288,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/etc/atrace_categories.txt:$(TARGET_COPY_OUT_VENDOR)/etc/atrace/atrace_categories.txt \
     device/generic/goldfish/emulator-info.txt:data/misc/emulator/version.txt \
     device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
-    device/generic/goldfish/radio/RadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
+    device/generic/goldfish/radio/EmulatorRadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
     device/generic/goldfish/data/etc/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
     device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml \
     device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0_for_CtsCarrierApiTestCases.xml:data/misc/modem_simulator/iccprofile_for_carrierapitests.xml \
@@ -311,10 +319,6 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/display_settings_app_compat.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_app_compat.xml \
     device/generic/goldfish/display_settings_freeform.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings_freeform.xml \
     device/generic/goldfish/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
-    device/generic/goldfish/pixel_fold/device_state_configuration.xml:/data/misc/pixel_fold/devicestate/device_state_configuration.xml \
-    device/generic/goldfish/pixel_fold/display_layout_configuration.xml:/data/misc/pixel_fold/displayconfig/display_layout_configuration.xml \
-    device/generic/goldfish/pixel_fold/display_settings.xml:/data/misc/pixel_fold/display_settings.xml \
-    device/generic/goldfish/pixel_fold/sensor_hinge_angle.xml:/data/misc/pixel_fold/extra_feature.xml \
     device/generic/goldfish/data/etc/config.ini:config.ini \
     device/generic/goldfish/wifi/wpa_supplicant.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant.conf \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \
