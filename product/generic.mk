@@ -124,6 +124,15 @@ DEVICE_MANIFEST_FILE += device/generic/goldfish/radio/manifest.radio.xml
 DISABLE_RILD_OEM_HOOK := true
 # For customize cflags for libril share library building by soong.
 $(call soong_config_set,ril,disable_rild_oem_hook,true)
+
+PRODUCT_COPY_FILES += \
+    device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
+    device/generic/goldfish/radio/EmulatorRadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
+    device/generic/goldfish/data/etc/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
+    device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml \
+    device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0_for_CtsCarrierApiTestCases.xml:data/misc/modem_simulator/iccprofile_for_carrierapitests.xml \
+    device/generic/goldfish/data/etc/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
+
 endif
 
 ifneq ($(EMULATOR_VENDOR_NO_BIOMETRICS), true)
@@ -287,12 +296,6 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/etc/encryptionkey.img:encryptionkey.img \
     device/generic/goldfish/data/etc/atrace_categories.txt:$(TARGET_COPY_OUT_VENDOR)/etc/atrace/atrace_categories.txt \
     device/generic/goldfish/emulator-info.txt:data/misc/emulator/version.txt \
-    device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
-    device/generic/goldfish/radio/RadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
-    device/generic/goldfish/data/etc/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
-    device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml \
-    device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0_for_CtsCarrierApiTestCases.xml:data/misc/modem_simulator/iccprofile_for_carrierapitests.xml \
-    device/generic/goldfish/data/etc/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
     device/generic/goldfish/data/etc/local.prop:data/local.prop \
     device/generic/goldfish/init.ranchu.adb.setup.sh:$(TARGET_COPY_OUT_SYSTEM_EXT)/bin/init.ranchu.adb.setup.sh \
     device/generic/goldfish/init_ranchu_device_state.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init_ranchu_device_state.sh \
