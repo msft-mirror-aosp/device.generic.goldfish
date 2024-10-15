@@ -35,12 +35,3 @@ cc_library {
 
     vendor: true,
 }
-
-// Create java protobuf code
-java_library {
-    name: "goldfish-fork-sap-api-java-static",
-    srcs: ["proto/sap-api.proto"],
-    proto: {
-        type: "micro",
-    },
-}
