@@ -21,7 +21,6 @@ BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_EMULATOR_DYNAMIC_PARTITIONS_S
 
 PRODUCT_COPY_FILES += \
     device/generic/goldfish/tablet/data/etc/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml \
-    device/generic/goldfish/data/etc/advancedFeatures.ini.tablet:advancedFeatures.ini \
     device/generic/goldfish/data/etc/config.ini.nexus7tab:config.ini
 
 PRODUCT_COPY_FILES+= \
