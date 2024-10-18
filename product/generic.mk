@@ -126,12 +126,12 @@ DISABLE_RILD_OEM_HOOK := true
 $(call soong_config_set,ril,disable_rild_oem_hook,true)
 
 PRODUCT_COPY_FILES += \
-    device/generic/goldfish/data/etc/apns-conf.xml:data/misc/apns/apns-conf.xml \
+    device/generic/goldfish/radio/data/apns-conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/apns/apns-conf.xml \
+    device/generic/goldfish/radio/data/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
+    device/generic/goldfish/radio/data/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
     device/generic/goldfish/radio/EmulatorRadioConfig/radioconfig.xml:data/misc/emulator/config/radioconfig.xml \
-    device/generic/goldfish/data/etc/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim0.xml \
     device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0.xml:data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml \
     device/google/cuttlefish/host/commands/modem_simulator/files/iccprofile_for_sim0_for_CtsCarrierApiTestCases.xml:data/misc/modem_simulator/iccprofile_for_carrierapitests.xml \
-    device/generic/goldfish/data/etc/numeric_operator.xml:data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml \
 
 endif
 
