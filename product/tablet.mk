@@ -32,4 +32,7 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += system/bin/curl
 
+PRODUCT_COPY_FILES += \
+    device/generic/goldfish/data/etc/advancedFeatures.ini.tablet:advancedFeatures.ini \
+
 $(call inherit-product, device/generic/goldfish/product/generic.mk)
