@@ -6,8 +6,3 @@ on property:init.svc.qemu-device-state=stopped && property:ro.boot.qemu.device_s
     copy /data/vendor/device_state_configuration.xml /data/system/devicestate/device_state_configuration.xml
     rm /data/vendor/device_state_configuration.xml
     chown system system /data/system/devicestate/device_state_configuration.xml
-
-on post-fs-data
-    copy /vendor/etc/apns/apns-conf.xml /data/misc/apns/apns-conf.xml
-    chown system system /data/misc/apns/apns-conf.xml
-    chmod 0664 /data/misc/apns/apns-conf.xml
