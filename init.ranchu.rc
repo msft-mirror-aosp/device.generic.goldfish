@@ -22,6 +22,8 @@ on early-init
     setprop debug.hwui.renderer ${ro.boot.debug.hwui.renderer:-opengl}
     setprop debug.stagefright.ccodec ${ro.boot.debug.stagefright.ccodec}
     setprop debug.sf.nobootanimation ${ro.boot.debug.sf.nobootanimation}
+    setprop debug.angle.feature_overrides_enabled ${ro.boot.hardware.angle_feature_overrides_enabled}
+    setprop debug.angle.feature_overrides_disabled ${ro.boot.hardware.angle_feature_overrides_disabled}
     setprop vendor.qemu.dev.bootcomplete 0
 
     start vendor.dlkm_loader
