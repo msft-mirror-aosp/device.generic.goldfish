@@ -65,7 +65,6 @@ PRODUCT_VENDOR_PROPERTIES += \
     ro.surface_flinger.supports_background_blur=1 \
     ro.surface_flinger.use_color_management=false \
     ro.zygote.disable_gl_preload=1 \
-    debug.renderengine.backend=skiaglthreaded \
     debug.sf.vsync_reactor_ignore_present_fences=true \
     debug.stagefright.c2inputsurface=-1 \
     debug.stagefright.ccodec=4 \
@@ -78,7 +77,7 @@ PRODUCT_VENDOR_PROPERTIES += \
 # Device modules
 PRODUCT_PACKAGES += \
     android.hardware.drm-service-lazy.clearkey \
-    android.hardware.gatekeeper@1.0-service.software \
+    com.android.hardware.gatekeeper.nonsecure \
     android.hardware.usb-service.example \
     atrace \
     vulkan.ranchu \
