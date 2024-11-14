@@ -77,7 +77,7 @@ PRODUCT_VENDOR_PROPERTIES += \
 # Device modules
 PRODUCT_PACKAGES += \
     android.hardware.drm-service-lazy.clearkey \
-    android.hardware.gatekeeper@1.0-service.software \
+    com.android.hardware.gatekeeper.nonsecure \
     android.hardware.usb-service.example \
     atrace \
     vulkan.ranchu \
