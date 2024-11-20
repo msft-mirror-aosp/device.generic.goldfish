@@ -39,11 +39,13 @@ RAMDISK_KERNEL_MODULES := \
 BOARD_SYSTEM_KERNEL_MODULES := $(wildcard $(KERNEL_ARTIFACTS_PATH)/*.ko)
 
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES := \
-    $(patsubst %,$(VIRTUAL_DEVICE_KERNEL_MODULES_PATH)/%,$(RAMDISK_KERNEL_MODULES))
+    $(wildcard $(patsubst %,$(VIRTUAL_DEVICE_KERNEL_MODULES_PATH)/%,$(RAMDISK_KERNEL_MODULES))) \
+    $(wildcard $(patsubst %,$(KERNEL_ARTIFACTS_PATH)/%,$(RAMDISK_KERNEL_MODULES)))
 
 BOARD_VENDOR_KERNEL_MODULES := \
     $(filter-out $(BOARD_VENDOR_RAMDISK_KERNEL_MODULES),\
-                 $(wildcard $(VIRTUAL_DEVICE_KERNEL_MODULES_PATH)/*.ko))
+                 $(wildcard $(VIRTUAL_DEVICE_KERNEL_MODULES_PATH)/*.ko)\
+                 $(wildcard $(KERNEL_ARTIFACTS_PATH)/*.ko))
 
 BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := \
     device/generic/goldfish/board/kernel/kernel_modules.blocklist
