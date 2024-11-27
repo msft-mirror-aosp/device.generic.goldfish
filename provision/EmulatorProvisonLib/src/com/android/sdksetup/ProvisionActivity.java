@@ -111,6 +111,10 @@ public abstract class ProvisionActivity extends Activity {
     }
 
     protected void provisionWifi(final String ssid) {
+        if (isVisibleBackgroundUser(getApplicationContext())) {
+            return;
+        }
+
         Settings.Global.putInt(getContentResolver(), Settings.Global.TETHER_OFFLOAD_DISABLED, 1);
 
         final WifiManager mWifiManager = getApplicationContext().getSystemService(WifiManager.class);
@@ -250,7 +254,7 @@ public abstract class ProvisionActivity extends Activity {
     }
 
     protected boolean provisionRequired() {
-        return true;
+        return Settings.Global.getInt(getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 1;
     }
 
     protected boolean isVisibleBackgroundUser(Context context) {
