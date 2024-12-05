@@ -27,13 +27,13 @@ VIRTUAL_DEVICE_KERNEL_MODULES_PATH := \
 RAMDISK_KERNEL_MODULES := \
     virtio_dma_buf.ko \
     virtio_mmio.ko \
-    virtio_pci_legacy_dev.ko \
     virtio-rng.ko \
 
 RAMDISK_SYSTEM_KERNEL_MODULES += \
     virtio_blk.ko \
     virtio_console.ko \
     virtio_pci.ko \
+    virtio_pci_legacy_dev.ko \
     virtio_pci_modern_dev.ko \
     vmw_vsock_virtio_transport.ko \
 
