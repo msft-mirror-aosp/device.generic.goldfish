@@ -14,18 +14,6 @@
 # limitations under the License.
 #
 
-LOCAL_PATH := $(call my-dir)
 
-ifneq ($(filter $(LOCAL_PATH),$(PRODUCT_SOONG_NAMESPACES)),)
+include device/generic/goldfish/tasks/emu_img_zip.mk
 
-  ifeq ($(BUILD_QEMU_IMAGES),true)
-    QEMU_CUSTOMIZATIONS := true
-  endif
-
-  ifeq ($(QEMU_CUSTOMIZATIONS),true)
-    subdir_makefiles=$(call first-makefiles-under,$(LOCAL_PATH))
-    $(foreach mk,$(subdir_makefiles),$(info including $(mk) ...)$(eval include $(mk)))
-
-    include device/generic/goldfish/tasks/emu_img_zip.mk
-  endif
-endif
