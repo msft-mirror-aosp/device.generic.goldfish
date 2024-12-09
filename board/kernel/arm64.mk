@@ -50,8 +50,6 @@ BOARD_VENDOR_KERNEL_MODULES := \
 BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := \
     device/generic/goldfish/board/kernel/kernel_modules.blocklist
 
-BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
-
 EMULATOR_KERNEL_FILE := $(KERNEL_ARTIFACTS_PATH)/kernel-$(TARGET_KERNEL_USE)-gz
 
 # BOARD_KERNEL_CMDLINE is not supported (b/361341981), use the file below
