@@ -34,8 +34,10 @@ USE_OPENGL_RENDERER := true
 # Emulator doesn't support sparse image format.
 TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
 
-# emulator is Non-A/B device
-AB_OTA_UPDATER := false
+# emulator never receives OTA. However, current build system requires
+# targets to specify an OTA mechanism. And since non-AB is deprecated,
+# we specify goldfish as "AB OTA update" target to avoid build breakage
+AB_OTA_UPDATER := true
 AB_OTA_PARTITIONS :=
 
 BOARD_USES_SYSTEM_OTHER_ODEX :=
