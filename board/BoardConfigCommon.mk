@@ -34,8 +34,10 @@ USE_OPENGL_RENDERER := true
 # Emulator doesn't support sparse image format.
 TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
 
-# emulator is Non-A/B device
-AB_OTA_UPDATER := false
+# emulator never receives OTA. However, current build system requires
+# targets to specify an OTA mechanism. And since non-AB is deprecated,
+# we specify goldfish as "AB OTA update" target to avoid build breakage
+AB_OTA_UPDATER := true
 AB_OTA_PARTITIONS :=
 
 BOARD_USES_SYSTEM_OTHER_ODEX :=
@@ -43,8 +45,12 @@ BOARD_USES_SYSTEM_OTHER_ODEX :=
 # emulator needs super.img
 BOARD_BUILD_SUPER_IMAGE_BY_DEFAULT := true
 
-# 8G + 8M
-BOARD_SUPER_PARTITION_SIZE ?= 8598323200
+# 8G
+BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= 8589934592
+
+# Override BOARD_SUPER_PARTITION_SIZE as (BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE * 2 + 8M)
+BOARD_SUPER_PARTITION_SIZE := $(shell expr $(BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE) \* 2 + 8192)
+
 BOARD_SUPER_PARTITION_GROUPS := emulator_dynamic_partitions
 
 BOARD_EMULATOR_DYNAMIC_PARTITIONS_PARTITION_LIST := \
@@ -67,9 +73,6 @@ BOARD_SYSTEM_EXTIMAGE_FILE_SYSTEM_TYPE := $(EMULATOR_RO_PARTITION_FS)
 BOARD_USES_SYSTEM_DLKMIMAGE := true
 BOARD_SYSTEM_DLKMIMAGE_FILE_SYSTEM_TYPE := erofs # we never write here
 TARGET_COPY_OUT_SYSTEM_DLKM := system_dlkm
-
-# 8G
-BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE ?= 8589934592
 
 #vendor boot
 BOARD_INCLUDE_DTB_IN_BOOTIMG := false
