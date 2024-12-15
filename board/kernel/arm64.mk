@@ -27,13 +27,13 @@ VIRTUAL_DEVICE_KERNEL_MODULES_PATH := \
 RAMDISK_KERNEL_MODULES := \
     virtio_dma_buf.ko \
     virtio_mmio.ko \
-    virtio_pci_legacy_dev.ko \
     virtio-rng.ko \
 
 RAMDISK_SYSTEM_KERNEL_MODULES += \
     virtio_blk.ko \
     virtio_console.ko \
     virtio_pci.ko \
+    virtio_pci_legacy_dev.ko \
     virtio_pci_modern_dev.ko \
     vmw_vsock_virtio_transport.ko \
 
@@ -49,6 +49,8 @@ BOARD_VENDOR_KERNEL_MODULES := \
 
 BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := \
     device/generic/goldfish/board/kernel/kernel_modules.blocklist
+
+BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
 
 EMULATOR_KERNEL_FILE := $(KERNEL_ARTIFACTS_PATH)/kernel-$(TARGET_KERNEL_USE)-gz
 
