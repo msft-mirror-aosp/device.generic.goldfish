@@ -82,10 +82,16 @@ cc_library_shared {
     vendor: true,
 }
 
+vintf_fragment {
+    name: "android.hardware.audio@7.1-impl.ranchu.xml",
+    src: "android.hardware.audio@7.1-impl.ranchu.xml",
+    vendor: true,
+}
+
 cc_library_shared {
     name: "android.hardware.audio@7.1-impl.ranchu",
     defaults: ["android.hardware.audio@7.x-impl.ranchu_default"],
-    vintf_fragments: ["android.hardware.audio@7.1-impl.ranchu.xml"],
+    vintf_fragment_modules: ["android.hardware.audio@7.1-impl.ranchu.xml"],
     shared_libs: [
         "android.hardware.audio@7.1",
         "android.hardware.audio.common@7.1-enums",
