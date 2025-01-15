@@ -201,11 +201,6 @@ public abstract class ProvisionActivity extends Activity {
     }
 
     protected void provisionTelephony() {
-        // b/193418404
-        // the following blocks, TODO: find out why and fix it. disable this for now.
-        // TelephonyManager mTelephony = getApplicationContext().getSystemService(TelephonyManager.class);
-        // mTelephony.setPreferredNetworkTypeBitmask(TelephonyManager.NETWORK_TYPE_BITMASK_NR);
-
         provisionMockModem();
     }
 
