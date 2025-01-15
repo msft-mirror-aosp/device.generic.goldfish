@@ -100,6 +100,24 @@ struct ReadThread : public IOThread {
         return mTid.get_future();
     }
 
+    Result getCapturePosition(uint64_t &frames, uint64_t &ts) const {
+        std::lock_guard l(mExternalSourceReadLock);
+        if (mSource == nullptr) {
+            // this could return a slightly stale position under data race.
+            frames = 0;
+            ts = systemTime(SYSTEM_TIME_MONOTONIC);
+            return Result::OK;
+        } else {
+            return mSource->getCapturePosition(frames, ts);
+        }
+    }
+
+    auto getDescriptors() const {
+        return std::make_tuple(
+                mCommandMQ.getDesc(), mDataMQ.getDesc(), mStatusMQ.getDesc());
+    }
+
+  private:
     void threadLoop() {
         util::setThreadPriority(SP_AUDIO_SYS, PRIORITY_AUDIO);
         mTid.set_value(pthread_self());
@@ -113,17 +131,21 @@ struct ReadThread : public IOThread {
             }
 
             if (efState & STAND_BY_REQUEST) {
+                ALOGD("%s: entering standby", __func__);
+                std::lock_guard l(mExternalSourceReadLock);
                 mSource.reset();
             }
 
             if (efState & (MessageQueueFlagBits::NOT_FULL | 0)) {
                 if (!mSource) {
-                    mSource = DevicePortSource::create(mDataMQ.getQuantumCount(),
+                    auto source = DevicePortSource::create(mDataMQ.getQuantumCount(),
                                                        mStream->getDeviceAddress(),
                                                        mStream->getAudioConfig(),
                                                        mStream->getAudioOutputFlags(),
                                                        mStream->getFrameCounter());
-                    LOG_ALWAYS_FATAL_IF(!mSource);
+                    LOG_ALWAYS_FATAL_IF(!source);
+                    std::lock_guard l(mExternalSourceReadLock);
+                    mSource = std::move(source);
                 }
 
                 processCommand();
@@ -214,9 +236,10 @@ struct ReadThread : public IOThread {
     StatusMQ mStatusMQ;
     DataMQ mDataMQ;
     std::unique_ptr<EventFlag, deleters::forEventFlag> mEfGroup;
-    std::unique_ptr<DevicePortSource> mSource;
     std::thread mThread;
     std::promise<pthread_t> mTid;
+    mutable std::mutex mExternalSourceReadLock; // used for external access to mSource.
+    std::unique_ptr<DevicePortSource> mSource;
 };
 
 } // namespace
@@ -380,10 +403,11 @@ Return<void> StreamIn::prepareForReading(uint32_t frameSize,
     auto t = std::make_unique<ReadThread>(this, frameSize * framesCount);
 
     if (t->isRunning()) {
+        const auto [commandDesc, dataDesc, statusDesc ] = t->getDescriptors();
         _hidl_cb(Result::OK,
-                 *(t->mCommandMQ.getDesc()),
-                 *(t->mDataMQ.getDesc()),
-                 *(t->mStatusMQ.getDesc()),
+                 *commandDesc,
+                 *dataDesc,
+                 *statusDesc,
                  t->getTid().get());
 
         mReadThread = std::move(t);
@@ -399,22 +423,16 @@ Return<uint32_t> StreamIn::getInputFramesLost() {
 }
 
 Return<void> StreamIn::getCapturePosition(getCapturePosition_cb _hidl_cb) {
-    const auto r = static_cast<ReadThread*>(mReadThread.get());
-    if (!r) {
+    const auto rt = static_cast<ReadThread*>(mReadThread.get());
+    if (!rt) {
         _hidl_cb(FAILURE(Result::INVALID_STATE), {}, {});
         return Void();
     }
 
-    const auto s = r->mSource.get();
-    if (!s) {
-        _hidl_cb(Result::OK, mFrames, systemTime(SYSTEM_TIME_MONOTONIC));
-    } else {
-        uint64_t frames;
-        uint64_t time;
-        const Result r = s->getCapturePosition(frames, time);
-        _hidl_cb(r, frames, time);
-    }
-
+    uint64_t frames{};
+    uint64_t time{};
+    const Result r = rt->getCapturePosition(frames, time);
+    _hidl_cb(r, frames, time);
     return Void();
 }
 
