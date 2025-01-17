@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <processgroup/sched_policy.h>
 #include <sys/resource.h>
 
 #include "utils.h"
