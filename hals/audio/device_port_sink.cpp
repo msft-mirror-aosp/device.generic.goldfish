@@ -71,6 +71,11 @@ struct TinyalsaSink : public DevicePortSink {
 
     ~TinyalsaSink() {
         mConsumeThreadRunning = false;
+        if (mPcm) {
+            ALOGD("%s: stopping PCM stream", __func__);
+            LOG_ALWAYS_FATAL_IF(pcm_stop(mPcm.get()) != 0);
+        }
+        ALOGD("%s: joining consumeThread", __func__);
         mConsumeThread.join();
     }
 
@@ -223,6 +228,7 @@ struct TinyalsaSink : public DevicePortSink {
                 }
             }
         }
+        ALOGD("%s: exiting", __func__);
     }
 
     static std::unique_ptr<TinyalsaSink> create(unsigned pcmCard,
