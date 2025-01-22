@@ -22,6 +22,7 @@ import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.input.InputManager;
 import android.hardware.input.InputManagerGlobal;
 import android.hardware.input.KeyboardLayout;
 import android.location.LocationManager;
@@ -140,7 +141,38 @@ public abstract class ProvisionActivity extends Activity {
 
     // Set physical keyboard layout based on the system property set by emulator host.
     protected void provisionKeyboard(final String deviceName, final String layoutName) {
-        // TODO: b/389995108
+        final InputDevice device = getKeyboardDevice(deviceName);
+        if (device != null && !layoutName.isEmpty()) {
+            setKeyboardLayout(device, layoutName);
+        }
+    }
+
+    protected InputDevice getKeyboardDevice(final String keyboardDeviceName) {
+        final int[] deviceIds = InputDevice.getDeviceIds();
+
+        for (int deviceId : deviceIds) {
+            InputDevice inputDevice = InputDevice.getDevice(deviceId);
+            if (inputDevice != null
+                    && inputDevice.supportsSource(InputDevice.SOURCE_KEYBOARD)
+                    && inputDevice.getName().equals(keyboardDeviceName)) {
+                return inputDevice;
+            }
+        }
+
+        return null;
+    }
+
+    protected void setKeyboardLayout(final InputDevice keyboardDevice, final String layoutName) {
+        final InputManager im = getApplicationContext().getSystemService(InputManager.class);
+        final KeyboardLayout[] keyboardLayouts = im.getKeyboardLayouts();
+
+        for (KeyboardLayout keyboardLayout : keyboardLayouts) {
+            if (keyboardLayout.getDescriptor().endsWith(layoutName)) {
+                InputManagerGlobal.getInstance().setKeyboardLayoutOverrideForInputDevice(
+                        keyboardDevice.getIdentifier(), keyboardLayout.getDescriptor());
+                return;
+            }
+        }
     }
 
     protected void provisionDisplay() {
