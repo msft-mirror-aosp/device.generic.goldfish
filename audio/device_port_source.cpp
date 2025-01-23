@@ -73,6 +73,11 @@ struct TinyalsaSource : public DevicePortSource {
 
     ~TinyalsaSource() {
         mProduceThreadRunning = false;
+        if (mPcm) {
+            ALOGD("%s: stopping PCM stream", __func__);
+            LOG_ALWAYS_FATAL_IF(pcm_stop(mPcm.get()) != 0);
+        }
+        ALOGD("%s: joining producerThread", __func__);
         mProduceThread.join();
     }
 
@@ -182,6 +187,7 @@ struct TinyalsaSource : public DevicePortSource {
                 }
             }
         }
+        ALOGD("%s: exiting", __func__);
     }
 
     size_t doRead(void *dst, size_t sz) {
