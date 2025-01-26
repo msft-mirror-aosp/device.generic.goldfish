@@ -8,4 +8,8 @@ allow rild self:packet_socket { bind create ioctl read setopt };
 allowxperm rild self:packet_socket ioctl { SIOCGIFFLAGS
                                            SIOCSIFFLAGS
                                            SIOCGIFHWADDR };
+
+starting_at_board_api(202504, `
+typeattribute rild unconstrained_vsock_violators;
+')
 allow rild self:vsock_socket create_socket_perms_no_ioctl;

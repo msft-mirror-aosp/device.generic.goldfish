@@ -16,7 +16,7 @@
 
 #include <log/log.h>
 //#include <cutils/bitops.h>
-#include <cutils/sched_policy.h>
+#include <processgroup/sched_policy.h>
 #include <system/audio.h>
 #include <sys/resource.h>
 #include <pthread.h>
