@@ -100,15 +100,20 @@ failed:     NOT_NULL(mRadioConfigResponse)->getSimSlotsStatusResponse(
             default:
                 goto failed;
             }
-        } else if (const CmeError* err = response->get_if<CmeError>()) {
-            if (err->message.compare("10") == 0) {
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            switch (cmeError->error) {
+            case RadioError::SIM_ABSENT:
                 simSlotStatus.cardState = sim::CardStatus::STATE_ABSENT;
-            } else if (err->message.compare("14") == 0) {
+                break;
+            case RadioError::SIM_BUSY:
+            case RadioError::SIM_ERR:
                 simSlotStatus.cardState = sim::CardStatus::STATE_ERROR;
-            } else {
+                break;
+
+            default:
                 RLOGE("%s:%s:%s:%d unexpected error: '%s'",
                       FAILURE_DEBUG_PREFIX, kFunc, "CPIN", __LINE__,
-                      err->message.c_str());
+                      toString(cmeError->error).c_str());
                 goto failed;
             }
         } else {

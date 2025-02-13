@@ -249,9 +249,8 @@ CellIdentityResult getCellIdentityImpl(const int areaCode, const int cellId, std
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, __func__);
         }
-    } else if (response->get_if<CmeError>()) {
-        return FAILURE_V(fail(RadioError::RADIO_NOT_AVAILABLE),
-                         "%s", toString(RadioError::RADIO_NOT_AVAILABLE).c_str());
+    } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+        return fail(cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, __func__, __LINE__));
     } else {
         response->unexpected(FAILURE_DEBUG_PREFIX, __func__);
     }
@@ -606,8 +605,8 @@ ScopedAStatus RadioNetwork::getNetworkSelectionMode(const int32_t serial) {
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const COPS* cops = response->get_if<COPS>()) {
             manual = (cops->networkSelectionMode == COPS::NetworkSelectionMode::MANUAL);
-        } else if (response->get_if<CmeError>()) {
-            manual = true;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -626,35 +625,38 @@ ScopedAStatus RadioNetwork::getOperator(const int32_t serial) {
         using CmeError = AtResponse::CmeError;
         using COPS = AtResponse::COPS;
 
+        RadioError status = RadioError::NONE;
+        std::string longName;
+        std::string shortName;
+        std::string numeric;
+
         const AtResponsePtr response =
             mAtConversation(requestPipe, atCmds::getOperator,
                             [](const AtResponse& response) -> bool {
                                return response.holds<COPS>() || response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
-            NOT_NULL(mRadioNetworkResponse)->getOperatorResponse(
-                    makeRadioResponseInfo(serial, FAILURE(RadioError::INTERNAL_ERR)),
-                    "", "", "");
-            return false;
+            status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const COPS* cops = response->get_if<COPS>()) {
             if ((cops->operators.size() == 1) && (cops->operators[0].isCurrent())) {
                 const COPS::OperatorInfo& current = cops->operators[0];
 
-                NOT_NULL(mRadioNetworkResponse)->getOperatorResponse(
-                        makeRadioResponseInfo(serial),
-                        current.longName, current.shortName, current.numeric);
-                return true;
+                longName = current.longName;
+                shortName = current.shortName;
+                numeric = current.numeric;
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
             }
-        } else if (response->get_if<CmeError>()) {
-            NOT_NULL(mRadioNetworkResponse)->getOperatorResponse(
-                    makeRadioResponseInfo(serial, FAILURE(RadioError::RADIO_NOT_AVAILABLE)),
-                    "", "", "");
-            return true;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
+
+        NOT_NULL(mRadioNetworkResponse)->getOperatorResponse(
+                makeRadioResponseInfo(serial, status),
+                std::move(longName), std::move(shortName), std::move(numeric));
+        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -849,14 +851,14 @@ ScopedAStatus RadioNetwork::setBarringPassword(const int32_t serial,
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
-        } else if (response->holds<CmeError>()) {
-            status = FAILURE(RadioError::PASSWORD_INCORRECT);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
 
         NOT_NULL(mRadioNetworkResponse)->setBarringPasswordResponse(
-            makeRadioResponseInfo(serial));
+            makeRadioResponseInfo(serial, status));
         return status != RadioError::INTERNAL_ERR;
     });
 
@@ -979,11 +981,7 @@ ScopedAStatus RadioNetwork::setNetworkSelectionModeManual(const int32_t serial,
         } else if (response->isOK()) {
             // good
         } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
-            if (cmeError->message == atCmds::kCmeErrorNoNetworkService) {
-                status = FAILURE(RadioError::OPERATION_NOT_ALLOWED);
-            } else {
-                status = FAILURE(RadioError::GENERIC_FAILURE);
-            }
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
