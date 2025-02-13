@@ -768,7 +768,7 @@ ScopedAStatus RadioSim::iccIoForApp(const int32_t serial, const sim::IccIo& iccI
                         status = FAILURE(RadioError::GENERIC_FAILURE);
                     }
                 } else {
-                    status = FAILURE(RadioError::GENERIC_FAILURE);
+                    iccIoResult.simResponse = crsm->response;
                 }
             } else {
                 iccIoResult.simResponse = crsm->response;
