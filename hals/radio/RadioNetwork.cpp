@@ -264,7 +264,7 @@ CellIdentityResult getCellIdentityImpl(const int areaCode, const int cellId, std
     if (!response || response->isParseError()) {
         return FAILURE(fail(RadioError::INTERNAL_ERR));
     } else if (const CTEC* ctec = response->get_if<CTEC>()) {
-        mtech = ctec->getCurrentModemTechnology();
+        mtech = ctec->getCurrentModemTechnology().value();
     } else {
         response->unexpected(FAILURE_DEBUG_PREFIX, __func__);
     }
@@ -368,7 +368,7 @@ ScopedAStatus RadioNetwork::getAllowedNetworkTypesBitmap(const int32_t serial) {
         } else if (const CTEC* ctec = response->get_if<CTEC>()) {
             networkTypeBitmap =
                 ratUtils::supportedRadioTechBitmask(
-                    ctec->getCurrentModemTechnology());
+                    ctec->getCurrentModemTechnology().value());
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -567,7 +567,7 @@ ScopedAStatus RadioNetwork::getDataRegistrationState(const int32_t serial) {
             } else if (const CTEC* ctec = response->get_if<CTEC>()) {
                 regStateResult.rat =
                     ratUtils::currentRadioTechnology(
-                        ctec->getCurrentModemTechnology());
+                        ctec->getCurrentModemTechnology().value());
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
             }
@@ -701,7 +701,8 @@ ScopedAStatus RadioNetwork::getVoiceRadioTechnology(const int32_t serial) {
         } else if (const CTEC* ctec = response->get_if<CTEC>()) {
             NOT_NULL(mRadioNetworkResponse)->getVoiceRadioTechnologyResponse(
                 makeRadioResponseInfo(serial),
-                ratUtils::currentRadioTechnology(ctec->getCurrentModemTechnology()));
+                ratUtils::currentRadioTechnology(
+                    ctec->getCurrentModemTechnology().value()));
             return true;
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
@@ -750,7 +751,7 @@ ScopedAStatus RadioNetwork::getVoiceRegistrationState(const int32_t serial) {
             } else if (const CTEC* ctec = response->get_if<CTEC>()) {
                 regStateResult.rat =
                     ratUtils::currentRadioTechnology(
-                        ctec->getCurrentModemTechnology());
+                        ctec->getCurrentModemTechnology().value());
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
             }
@@ -1267,12 +1268,12 @@ void RadioNetwork::handleUnsolicited(const AtResponse::CSQ& csq) {
         if (poweredOn) {
             signalStrength = csq.toSignalStrength();
 
-            if (mCurrentOperator && mCurrentRadio) {
+            if (mCurrentOperator && mCurrentModemTech) {
                 RadioError status;
                 CellIdentity cellIdentity;
                 std::tie(status, cellIdentity) =
                     getCellIdentityImpl(toOperatorInfo(mCurrentOperator.value()),
-                                        mCurrentRadio.value().first,
+                                        mCurrentModemTech.value(),
                                         mCreg.areaCode, mCreg.cellId,
                                         nullptr);
                 if (status == RadioError::NONE) {
@@ -1311,11 +1312,10 @@ void RadioNetwork::handleUnsolicited(const AtResponse::COPS& cops) {
 }
 
 void RadioNetwork::handleUnsolicited(const AtResponse::CTEC& ctec) {
-    if (ctec.values.size() == 2) {
+    auto currentModemTech = ctec.getCurrentModemTechnology();
+    if (currentModemTech) {
         std::lock_guard<std::mutex> lock(mMtx);
-        mCurrentRadio = std::make_pair(
-            ctec.getCurrentModemTechnology(),
-            static_cast<RadioTechnology>(ctec.values[1]));
+        mCurrentModemTech = std::move(currentModemTech.value());
     }
 }
 
