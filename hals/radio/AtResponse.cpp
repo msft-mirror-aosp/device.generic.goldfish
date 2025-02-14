@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define FAILURE_DEBUG_PREFIX "AtChannel"
+#define FAILURE_DEBUG_PREFIX "AtResponse"
 
 #include <algorithm>
 #include <charconv>
@@ -22,7 +22,8 @@
 #include <string>
 #include <string_view>
 
-#include "AtChannel.h"
+#include "atCmds.h"
+#include "AtResponse.h"
 #include "Parser.h"
 #include "debug.h"
 #include "hexbin.h"
@@ -251,11 +252,56 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
 #undef FAILURE_DEBUG_PREFIX
 #define FAILURE_DEBUG_PREFIX "CmeError"
 AtResponsePtr AtResponse::CmeError::parse(const std::string_view str) {
+    RadioError err;
+
+    if (str.compare(atCmds::kCmeErrorOperationNotAllowed) == 0) {
+        err = RadioError::OPERATION_NOT_ALLOWED;
+    } else if (str.compare(atCmds::kCmeErrorOperationNotSupported) == 0) {
+        err = RadioError::REQUEST_NOT_SUPPORTED;
+    } else if (str.compare(atCmds::kCmeErrorSimNotInserted) == 0) {
+        err = RadioError::SIM_ABSENT;
+    } else if (str.compare(atCmds::kCmeErrorSimPinRequired) == 0) {
+        err = RadioError::SIM_PIN2;
+    } else if (str.compare(atCmds::kCmeErrorSimPukRequired) == 0) {
+        err = RadioError::SIM_PUK2;
+    } else if (str.compare(atCmds::kCmeErrorSimBusy) == 0) {
+        err = RadioError::SIM_BUSY;
+    } else if (str.compare(atCmds::kCmeErrorIncorrectPassword) == 0) {
+        err = RadioError::PASSWORD_INCORRECT;
+    } else if (str.compare(atCmds::kCmeErrorMemoryFull) == 0) {
+        err = RadioError::SIM_FULL;
+    } else if (str.compare(atCmds::kCmeErrorInvalidIndex) == 0) {
+        err = RadioError::INVALID_ARGUMENTS;
+    } else if (str.compare(atCmds::kCmeErrorNotFound) == 0) {
+        err = RadioError::NO_SUCH_ELEMENT;
+    } else if (str.compare(atCmds::kCmeErrorInvalidCharactersInTextString) == 0) {
+        err = RadioError::GENERIC_FAILURE;
+    } else if (str.compare(atCmds::kCmeErrorNoNetworkService) == 0) {
+        err = RadioError::NO_NETWORK_FOUND;
+    } else if (str.compare(atCmds::kCmeErrorNetworkNotAllowedEmergencyCallsOnly) == 0) {
+        err = RadioError::NETWORK_REJECT;
+    } else if (str.compare(atCmds::kCmeErrorInCorrectParameters) == 0) {
+        err = RadioError::INVALID_ARGUMENTS;
+    } else if (str.compare(atCmds::kCmeErrorNetworkNotAttachedDueToMTFunctionalRestrictions) == 0) {
+        err = RadioError::NETWORK_REJECT;
+    } else if (str.compare(atCmds::kCmeErrorFixedDialNumberOnlyAllowed) == 0) {
+        err = RadioError::GENERIC_FAILURE;
+    } else {
+        err = RadioError::GENERIC_FAILURE;
+    }
+
     CmeError cmeErr = {
-        .message = toString(str),
+        .error = err,
     };
 
     return make(std::move(cmeErr));
+}
+
+RadioError AtResponse::CmeError::getErrorAndLog(
+        const char* klass, const char* func, int line) const {
+    RLOGE("%s:%s:%d failure: %s", klass, func, line,
+          toString(error).c_str());
+    return error;
 }
 
 #undef FAILURE_DEBUG_PREFIX
