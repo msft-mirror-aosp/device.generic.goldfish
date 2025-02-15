@@ -178,10 +178,10 @@ struct AtResponse {
         }
         static AtResponsePtr parse(std::string_view str);
 
-        ratUtils::ModemTechnology getCurrentModemTechnology() const;
+        std::optional<ratUtils::ModemTechnology> getCurrentModemTechnology() const;
+        bool isDONE() const;
 
-        std::vector<int32_t> values;
-        bool done = false;
+        std::vector<std::string> values;
     };
 
     struct COPS {
