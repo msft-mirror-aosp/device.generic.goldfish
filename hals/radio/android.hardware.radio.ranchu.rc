@@ -1,0 +1,4 @@
+service vendor.radio-ranchu /vendor/bin/hw/android.hardware.radio-service.ranchu
+    class hal
+    user nobody
+    group system
