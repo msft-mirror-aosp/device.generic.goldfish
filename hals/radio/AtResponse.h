@@ -22,6 +22,7 @@
 #include <string_view>
 #include <variant>
 
+#include <aidl/android/hardware/radio/RadioError.h>
 #include <aidl/android/hardware/radio/modem/RadioState.h>
 #include <aidl/android/hardware/radio/network/CellConnectionStatus.h>
 #include <aidl/android/hardware/radio/network/CdmaRoamingType.h>
@@ -57,7 +58,10 @@ struct AtResponse {
         }
         static AtResponsePtr parse(std::string_view str);
 
-        std::string message;
+        RadioError getErrorAndLog(const char* klass,
+                                  const char* func, int line) const;
+
+        RadioError error;
     };
 
     struct CmsError {
@@ -174,10 +178,10 @@ struct AtResponse {
         }
         static AtResponsePtr parse(std::string_view str);
 
-        ratUtils::ModemTechnology getCurrentModemTechnology() const;
+        std::optional<ratUtils::ModemTechnology> getCurrentModemTechnology() const;
+        bool isDONE() const;
 
-        std::vector<int32_t> values;
-        bool done = false;
+        std::vector<std::string> values;
     };
 
     struct COPS {
