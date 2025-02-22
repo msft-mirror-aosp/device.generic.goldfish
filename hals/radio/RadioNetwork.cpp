@@ -31,7 +31,10 @@ namespace android {
 namespace hardware {
 namespace radio {
 namespace implementation {
+using network::AccessTechnologySpecificInfo;
 using network::EutranBands;
+using network::EutranRegistrationInfo;
+using network::Cdma2000RegistrationInfo;
 using network::CellConnectionStatus;
 using network::CellIdentity;
 using network::CellIdentityCdma;
@@ -345,6 +348,65 @@ std::pair<RadioError, CellInfo> buildCellInfo(const bool registered,
     return {RadioError::NONE, std::move(cellInfo)};
 }
 
+void setAccessTechnologySpecificInfo(
+        AccessTechnologySpecificInfo* accessTechnologySpecificInfo,
+        const RadioTechnology rat) {
+    switch (rat) {
+    case RadioTechnology::LTE:
+    case RadioTechnology::LTE_CA: {
+            EutranRegistrationInfo eri = {
+                .lteVopsInfo = {
+                    .isVopsSupported = false,
+                    .isEmcBearerSupported = false,
+                },
+            };
+
+            accessTechnologySpecificInfo->set<
+                AccessTechnologySpecificInfo::eutranInfo>(std::move(eri));
+        }
+        break;
+
+    case RadioTechnology::NR: {
+            EutranRegistrationInfo eri = {
+                .nrIndicators = {
+                    .isNrAvailable = true,
+                    .isDcNrRestricted = false,
+                    .isEndcAvailable = false,
+                },
+            };
+
+            accessTechnologySpecificInfo->set<
+                AccessTechnologySpecificInfo::eutranInfo>(std::move(eri));
+        }
+        break;
+
+    case RadioTechnology::HSUPA:
+    case RadioTechnology::HSDPA:
+    case RadioTechnology::HSPA:
+    case RadioTechnology::HSPAP:
+    case RadioTechnology::UMTS:
+    case RadioTechnology::IS95A:
+    case RadioTechnology::IS95B:
+    case RadioTechnology::ONE_X_RTT:
+    case RadioTechnology::EVDO_0:
+    case RadioTechnology::EVDO_A:
+    case RadioTechnology::EVDO_B:
+    case RadioTechnology::EHRPD:
+    case RadioTechnology::TD_SCDMA: {
+            Cdma2000RegistrationInfo cri = {
+                .systemIsInPrl = Cdma2000RegistrationInfo::PRL_INDICATOR_IN_PRL,
+            };
+
+            accessTechnologySpecificInfo->set<
+                AccessTechnologySpecificInfo::cdmaInfo>(std::move(cri));
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
 }  // namespace
 
 RadioNetwork::RadioNetwork(std::shared_ptr<AtChannel> atChannel) : mAtChannel(std::move(atChannel)) {
@@ -573,6 +635,10 @@ ScopedAStatus RadioNetwork::getDataRegistrationState(const int32_t serial) {
             }
         }
 
+        setAccessTechnologySpecificInfo(
+            &regStateResult.accessTechnologySpecificInfo,
+            regStateResult.rat);
+
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioNetworkResponse)->getDataRegistrationStateResponse(
                 makeRadioResponseInfo(serial), std::move(regStateResult));
@@ -757,7 +823,11 @@ ScopedAStatus RadioNetwork::getVoiceRegistrationState(const int32_t serial) {
             }
         }
 
-       if (status == RadioError::NONE) {
+        setAccessTechnologySpecificInfo(
+            &regStateResult.accessTechnologySpecificInfo,
+            regStateResult.rat);
+
+        if (status == RadioError::NONE) {
             NOT_NULL(mRadioNetworkResponse)->getVoiceRegistrationStateResponse(
                 makeRadioResponseInfo(serial), std::move(regStateResult));
             return true;
