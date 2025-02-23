@@ -363,8 +363,8 @@ ScopedAStatus RadioSim::getAllowedCarriers(const int32_t serial) {
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, __func__);
             }
-        } else if (response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, __func__);
         }
@@ -441,12 +441,8 @@ ScopedAStatus RadioSim::getFacilityLockForApp(const int32_t serial, const std::s
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const CLCK* clck = response->get_if<CLCK>()) {
             lockBitmask = clck->locked ? 7 : 0;
-        } else if (const CmeError* err = response->get_if<CmeError>()) {
-            if (err->message.compare(atCmds::kCmeErrorOperationNotSupported) == 0) {
-                status = FAILURE(RadioError::CANCELLED);
-            } else {
-                status = FAILURE(RadioError::INVALID_ARGUMENTS);
-            }
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -561,7 +557,7 @@ ScopedAStatus RadioSim::getIccCardStatus(const int32_t serial) {
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
-            goto done;
+            goto failed;
         } else if (const CPIN* cpin = response->get_if<CPIN>()) {
             switch (cpin->state) {
             case CPIN::State::READY:
@@ -584,21 +580,26 @@ ScopedAStatus RadioSim::getIccCardStatus(const int32_t serial) {
 
             default:
                 status = FAILURE(RadioError::INTERNAL_ERR);
-                goto done;
+                goto failed;
             }
-        } else if (const CmeError* err = response->get_if<CmeError>()) {
-            if (err->message.compare(atCmds::kCmeErrorSimNotInserted) == 0) {
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            switch (cmeError->error) {
+            case RadioError::SIM_ABSENT:
                 cardStatus.cardState = sim::CardStatus::STATE_ABSENT;
                 cardStatus.universalPinState = sim::PinState::UNKNOWN;
-            } else if (err->message.compare(atCmds::kCmeErrorSimBusy) == 0) {
+                break;
+
+            case RadioError::SIM_BUSY:
+            case RadioError::SIM_ERR:
                 cardStatus.cardState = sim::CardStatus::STATE_ERROR;
                 cardStatus.universalPinState = sim::PinState::UNKNOWN;
                 appStatus = &kIccStatusBUSY;
-            } else {
-                status = FAILURE_V(RadioError::INTERNAL_ERR,
-                                   "Unexpected error: '%s'",
-                                   err->message.c_str());
-                goto done;
+                break;
+
+            default:
+                status = cmeError->getErrorAndLog(
+                    FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+                goto failed;
             }
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
@@ -612,7 +613,7 @@ ScopedAStatus RadioSim::getIccCardStatus(const int32_t serial) {
                                 });
             if (!response || response->isParseError()) {
                 status = FAILURE(RadioError::INTERNAL_ERR);
-                goto done;
+                goto failed;
             } else if (const std::string* iccid = response->get_if<std::string>()) {
                 cardStatus.iccid = *iccid;
             } else {
@@ -630,18 +631,15 @@ ScopedAStatus RadioSim::getIccCardStatus(const int32_t serial) {
             cardStatus.eid = kEID;
         }
 
-done:   if (status == RadioError::NONE) {
+        if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->getIccCardStatusResponse(
                     makeRadioResponseInfo(serial), std::move(cardStatus));
+            return true;
         } else {
-            NOT_NULL(mRadioSimResponse)->getIccCardStatusResponse(
-                    makeRadioResponseInfo(serial,
-                                          FAILURE_V(status, "%s",
-                                                    toString(status).c_str())),
-                    {});
-
+failed:     NOT_NULL(mRadioSimResponse)->getIccCardStatusResponse(
+                    makeRadioResponseInfo(serial, status), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -664,12 +662,8 @@ ScopedAStatus RadioSim::getImsiForApp(const int32_t serial, const std::string& /
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const std::string* pImsi = response->get_if<std::string>()) {
             imsi = *pImsi;
-        } else if (const CmeError* err = response->get_if<CmeError>()) {
-            if (err->message.compare(atCmds::kCmeErrorNotFound) == 0) {
-                status = FAILURE(RadioError::INVALID_SIM_STATE);
-            } else {
-                status = FAILURE(RadioError::CANCELLED);
-            }
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -677,11 +671,12 @@ ScopedAStatus RadioSim::getImsiForApp(const int32_t serial, const std::string& /
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->getImsiForAppResponse(
                     makeRadioResponseInfo(serial), std::move(imsi));
+            return true;
         } else {
             NOT_NULL(mRadioSimResponse)->getImsiForAppResponse(
                     makeRadioResponseInfo(serial, FAILURE(status)), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -720,8 +715,8 @@ ScopedAStatus RadioSim::iccCloseLogicalChannelWithSessionInfo(const int32_t seri
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
-        } else if (response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::INVALID_ARGUMENTS);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->get_if<CCHC>()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -773,13 +768,13 @@ ScopedAStatus RadioSim::iccIoForApp(const int32_t serial, const sim::IccIo& iccI
                         status = FAILURE(RadioError::GENERIC_FAILURE);
                     }
                 } else {
-                    status = FAILURE(RadioError::GENERIC_FAILURE);
+                    iccIoResult.simResponse = crsm->response;
                 }
             } else {
                 iccIoResult.simResponse = crsm->response;
             }
-        } else if (response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::NO_RESOURCES);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -787,11 +782,12 @@ ScopedAStatus RadioSim::iccIoForApp(const int32_t serial, const sim::IccIo& iccI
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->iccIoForAppResponse(
                     makeRadioResponseInfo(serial), std::move(iccIoResult));
+            return true;
         } else {
             NOT_NULL(mRadioSimResponse)->iccIoForAppResponse(
                     makeRadioResponseInfo(serial, status), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -824,8 +820,8 @@ ScopedAStatus RadioSim::iccOpenLogicalChannel(const int32_t serial,
                                 channelId, 10).ptr != valueEnd) {
                     status = FAILURE(RadioError::INTERNAL_ERR);
                 }
-            } else if (response->get_if<CmeError>()) {
-                status = FAILURE(RadioError::GENERIC_FAILURE);
+            } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+                status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
             }
@@ -844,8 +840,8 @@ ScopedAStatus RadioSim::iccOpenLogicalChannel(const int32_t serial,
                 if (std::from_chars(idStr->data(), end, channelId, 10).ptr != end) {
                     status = FAILURE(RadioError::INTERNAL_ERR);
                 }
-            } else if (response->get_if<CmeError>()) {
-                status = FAILURE(RadioError::GENERIC_FAILURE);
+            } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+                status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
             } else {
                 response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
             }
@@ -909,8 +905,8 @@ ScopedAStatus RadioSim::iccTransmitApduBasicChannel(const int32_t serial,
             } else {
                 status = FAILURE(RadioError::GENERIC_FAILURE);
             }
-        } else if (const CmeError* cmeErr = response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -918,11 +914,12 @@ ScopedAStatus RadioSim::iccTransmitApduBasicChannel(const int32_t serial,
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->iccTransmitApduBasicChannelResponse(
                 makeRadioResponseInfo(serial), std::move(iccIoResult));
+            return true;
         } else {
             NOT_NULL(mRadioSimResponse)->iccTransmitApduBasicChannelResponse(
                 makeRadioResponseInfo(serial, status), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -955,8 +952,8 @@ ScopedAStatus RadioSim::iccTransmitApduLogicalChannel(
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const CGLA* cgla = response->get_if<CGLA>()) {
             iccIoResult.simResponse = cgla->response;
-        } else if (const CmeError* cmeErr = response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -964,11 +961,12 @@ ScopedAStatus RadioSim::iccTransmitApduLogicalChannel(
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->iccTransmitApduLogicalChannelResponse(
                 makeRadioResponseInfo(serial), std::move(iccIoResult));
+            return true;
         } else {
             NOT_NULL(mRadioSimResponse)->iccTransmitApduLogicalChannelResponse(
                 makeRadioResponseInfo(serial, status), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -1105,7 +1103,7 @@ ScopedAStatus RadioSim::requestIccSimAuthentication(const int32_t serial,
         } else if (response->isOK()) {
             status = FAILURE(RadioError::GENERIC_FAILURE);
         } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -1113,11 +1111,12 @@ ScopedAStatus RadioSim::requestIccSimAuthentication(const int32_t serial,
         if (status == RadioError::NONE) {
             NOT_NULL(mRadioSimResponse)->requestIccSimAuthenticationResponse(
                     makeRadioResponseInfo(serial), std::move(iccIoResult));
+            return true;
         } else {
             NOT_NULL(mRadioSimResponse)->requestIccSimAuthenticationResponse(
                     makeRadioResponseInfo(serial, status), {});
+            return status != RadioError::INTERNAL_ERR;
         }
-        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
