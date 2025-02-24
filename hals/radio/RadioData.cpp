@@ -244,6 +244,9 @@ ScopedAStatus RadioData::setupDataCall(const int32_t serial,
     static const char* const kFunc = __func__;
     mAtChannel->queueRequester([this, serial, dataProfileInfo, pduSessionId]
                                (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CmeError = AtResponse::CmeError;
+        using CGCONTRDP = AtResponse::CGCONTRDP;
+
         RadioError status;
         const int32_t cid = allocateId();
 
@@ -262,13 +265,13 @@ failed:     releaseId(cid);
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
                                return response.holds<AtResponse::OK>() ||
-                                      response.holds<AtResponse::CmeError>();
+                                      response.holds<CmeError>();
                             });
         if (!response) {
             status = FAILURE(RadioError::INTERNAL_ERR);
             goto failed;
-        } else if (response->holds<AtResponse::CmeError>()) {
-            status = FAILURE_V(RadioError::GENERIC_FAILURE, "'%s' failed", request.c_str());
+        } else if (const CmeError* err = response->get_if<CmeError>()) {
+            status = FAILURE_V(err->error, "%s",  toString(err->error).c_str());
             goto failed;
         } else if (!response->holds<AtResponse::OK>()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
@@ -290,13 +293,13 @@ failed:     releaseId(cid);
         response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
-                               return response.holds<AtResponse::CGCONTRDP>() ||
-                                      response.holds<AtResponse::CmeError>();
+                               return response.holds<CGCONTRDP>() ||
+                                      response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
             goto failed;
-        } else if (const AtResponse::CGCONTRDP* cgcontrdp = response->get_if<AtResponse::CGCONTRDP>()) {
+        } else if (const CGCONTRDP* cgcontrdp = response->get_if<CGCONTRDP>()) {
             if (!setIpAddr(cgcontrdp->localAddr.c_str(),
                            cgcontrdp->localAddrSize,
                            setupDataCallResult.ifname.c_str())) {
@@ -325,8 +328,8 @@ failed:     releaseId(cid);
             std::lock_guard<std::mutex> lock(mMtx);
             mDataCalls.insert({ cid, setupDataCallResult });
             status = RadioError::NONE;
-        } else if (const AtResponse::CmeError* err = response->get_if<AtResponse::CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* err = response->get_if<CmeError>()) {
+            status = FAILURE_V(err->error, "%s",  toString(err->error).c_str());
             goto failed;
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
