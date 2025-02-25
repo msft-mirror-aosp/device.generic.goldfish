@@ -275,8 +275,9 @@ failed:     releaseId(cid);
         }
 
         SetupDataCallResult setupDataCallResult = {
+            .suggestedRetryTime = -1,
             .cid = cid,
-            .active = SetupDataCallResult::DATA_CONNECTION_STATUS_ACTIVE,
+            .active = SetupDataCallResult::DATA_CONNECTION_STATUS_INACTIVE,
             .type = dataProfileInfo.protocol,
             .ifname = kInterfaceName,
             .mtuV4 = 1500,
@@ -303,16 +304,18 @@ failed:     releaseId(cid);
                 goto failed;
             }
 
-            const auto makeLinkAddress = [](std::string address) -> data::LinkAddress {
+            const auto makeLinkAddress = [](const std::string_view address,
+                                            const size_t addrSize) -> data::LinkAddress {
                 return {
-                    .address = std::move(address),
+                    .address = std::format("{0:s}/{1:d}", address, addrSize),
                     .addressProperties = 0,
                     .deprecationTime = -1,
                     .expirationTime = -1,
                 };
             };
 
-            setupDataCallResult.addresses.push_back(makeLinkAddress(cgcontrdp->localAddr));
+            setupDataCallResult.addresses.push_back(
+                makeLinkAddress(cgcontrdp->localAddr, cgcontrdp->localAddrSize));
             setupDataCallResult.gateways.push_back(cgcontrdp->gwAddr);
             setupDataCallResult.dnses.push_back(cgcontrdp->dns1);
             if (!cgcontrdp->dns2.empty()) {
