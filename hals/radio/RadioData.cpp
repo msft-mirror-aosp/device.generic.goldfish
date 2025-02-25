@@ -126,22 +126,22 @@ bool setIpAddr(const char *addr, const int addrSize,
         sin->sin_family = AF_INET;
         sin->sin_addr.s_addr = inet_addr(addr);
         if (ioctl(sock, SIOCSIFADDR, &req4) < 0) {
-            //::close(sock);
-            //return FAILURE_V(false, "SIOCSIFADDR IPv4 failed: %s (%d)",
-            //                 strerror(errno), errno);
+            ::close(sock);
+            return FAILURE_V(false, "SIOCSIFADDR IPv4 failed: %s (%d)",
+                             strerror(errno), errno);
         }
 
         sin->sin_addr.s_addr = htonl(0xFFFFFFFFu << (32 - (addrSize ? addrSize : 32)));
         if (ioctl(sock, SIOCSIFNETMASK, &req4) < 0) {
-            //::close(sock);
-            //return FAILURE_V(false, "SIOCSIFNETMASK IPv4 failed: %s (%d)",
-            //                 strerror(errno), errno);
+            ::close(sock);
+            return FAILURE_V(false, "SIOCSIFNETMASK IPv4 failed: %s (%d)",
+                             strerror(errno), errno);
         }
     } else {
         if (ioctl(sock, SIOCGIFINDEX, &req4) < 0) {
-            //::close(sock);
-            //return FAILURE_V(false, "SIOCGIFINDEX IPv6 failed: %s (%d)",
-            //                 strerror(errno), errno);
+            ::close(sock);
+            return FAILURE_V(false, "SIOCGIFINDEX IPv6 failed: %s (%d)",
+                             strerror(errno), errno);
         }
 
         struct in6_ifreq req6 = {
@@ -156,9 +156,9 @@ bool setIpAddr(const char *addr, const int addrSize,
         }
 
         if (ioctl(sock, SIOCSIFADDR, &req6) < 0) {
-            //::close(sock);
-            //return FAILURE_V(false, "SIOCSIFADDR failed: %s (%d)",
-            //                 strerror(errno), errno);
+            ::close(sock);
+            return FAILURE_V(false, "SIOCSIFADDR failed: %s (%d)",
+                             strerror(errno), errno);
         }
     }
 
