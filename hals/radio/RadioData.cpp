@@ -89,7 +89,7 @@ bool setInterfaceState(const char* interfaceName, const bool on) {
                          interfaceName, strerror(errno), errno);
     }
 
-    if (((request.ifr_flags & IFF_UP) != 0) != on) {
+    if (((request.ifr_flags & IFF_UP) != 0) == on) {
         ::close(sock);
         return true;  // Interface already in desired state
     }
