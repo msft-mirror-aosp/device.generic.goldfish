@@ -765,9 +765,11 @@ AtResponsePtr AtResponse::CSQ::parse(const std::string_view str) {
     switch (n) {
     case 22:
         csq.wcdma_signalStrength = values[14];
+        if (csq.wcdma_signalStrength != kUnknown) {
+            csq.wcdma_rscp = 42;
+            csq.wcdma_ecno = 19;
+        }
         csq.wcdma_bitErrorRate = values[15];
-        csq.wcdma_rscp = 42;
-        csq.wcdma_ecno = 19;
         csq.nr_ssRsrp = values[16];
         csq.nr_ssRsrq = values[17];
         csq.nr_ssSinr = values[18];
