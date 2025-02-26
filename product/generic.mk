@@ -267,7 +267,6 @@ PRODUCT_PACKAGES += \
     com.android.hardware.neuralnetworks \
     android.hardware.power-service.example \
     android.hardware.power.stats-service.example \
-    com.android.hardware.rebootescrow \
     android.hardware.thermal@2.0-service.mock \
     android.hardware.vibrator-service.example
 
@@ -275,6 +274,11 @@ PRODUCT_PACKAGES += \
 ifneq ($(PRODUCT_IS_ATV_SDK),true)
     PRODUCT_PACKAGES += \
         android.hardware.identity-service.example
+endif
+
+ifneq ($(EMULATOR_VENDOR_NO_REBOOT_ESCROW),true)
+PRODUCT_PACKAGES += \
+    com.android.hardware.rebootescrow
 endif
 
 PRODUCT_COPY_FILES += \
