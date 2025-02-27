@@ -347,6 +347,7 @@ ScopedAStatus RadioData::deactivateDataCall(
         const int32_t serial, const int32_t cid,
         const data::DataRequestReason /*reason*/) {
     bool removed;
+    bool empty;
     {
         std::lock_guard<std::mutex> lock(mMtx);
         const auto i = mDataCalls.find(cid);
@@ -357,6 +358,11 @@ ScopedAStatus RadioData::deactivateDataCall(
         } else {
             removed = false;
         }
+        empty = mDataCalls.empty();
+    }
+
+    if (empty) {
+        setInterfaceState(kInterfaceName, false);
     }
 
     if (removed) {
