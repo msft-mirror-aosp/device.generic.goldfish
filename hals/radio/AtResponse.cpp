@@ -54,6 +54,10 @@ struct CmdIdVisitor {
         return "ERROR"sv;
     }
 
+    std::string_view operator()(const AtResponse::RING&) const {
+        return "RING"sv;
+    }
+
     std::string_view operator()(const AtResponse::SmsPrompt&) const {
         return "SmsPrompt"sv;
     }
@@ -188,6 +192,11 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
         { CMD(MBAU),     false },
     };
 #undef CMD
+
+    static constexpr std::string_view kRING = "RING\r"sv;
+    if (str.starts_with(kRING)) {
+        return { int(kRING.size()), AtResponse::make(RING()) };
+    }
 
     static constexpr std::string_view kCMT = "+CMT:"sv;
     if (str.starts_with(kCMT)) {
