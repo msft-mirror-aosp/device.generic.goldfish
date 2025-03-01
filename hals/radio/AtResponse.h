@@ -49,6 +49,7 @@ struct AtResponse {
 
     struct OK {};
     struct ERROR {};
+    struct RING {};
     struct SmsPrompt {};
 
     struct CmeError {
@@ -633,7 +634,7 @@ struct AtResponse {
 
 private:
     using Value = std::variant<OK, ParseError,
-                               ERROR, SmsPrompt, CmeError, CmsError,
+                               ERROR, RING, SmsPrompt, CmeError, CmsError,
                                CPIN, CPINR, CRSM, CFUN,
                                CREG, CEREG, CGREG,
                                CTEC, COPS, WRMP, CCSS, CSQ,
