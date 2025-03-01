@@ -874,7 +874,7 @@ AtResponsePtr AtResponse::CLCC::parse(const std::string_view str) {
         std::string number;
 
         // +CLCC: <index>,<dir>,<state>,<mode>,<mpty>,<number>,<type>\r
-        if (parser.skip("+CLCC").skip(' ')(&index).skip(',')
+        if (parser.skip("+CLCC:").skip(' ')(&index).skip(',')
                   (&dir).skip(',')(&state).skip(',')
                   (&mode).skip(',')(&mpty).skip(',')
                   (&number, ',')(&type).skip(kCR).matchSoFar()) {
