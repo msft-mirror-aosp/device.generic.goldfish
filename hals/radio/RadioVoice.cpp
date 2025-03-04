@@ -81,8 +81,9 @@ ScopedAStatus RadioVoice::exitEmergencyCallbackMode(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::explicitCallTransfer(const int32_t serial) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->explicitCallTransferResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
@@ -125,7 +126,6 @@ ScopedAStatus RadioVoice::getCallForwardStatus(const int32_t serial,
                 std::move(callForwardInfos));
         return status != RadioError::INTERNAL_ERR;
     });
-
 
     return ScopedAStatus::ok();
 }
@@ -211,8 +211,9 @@ ScopedAStatus RadioVoice::getCurrentCalls(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::getLastCallFailCause(const int32_t serial) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->getLastCallFailCauseResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__), {});
     return ScopedAStatus::ok();
 }
@@ -225,8 +226,9 @@ ScopedAStatus RadioVoice::getMute(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::getPreferredVoicePrivacy(const int32_t serial) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->getPreferredVoicePrivacyResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__), false);
     return ScopedAStatus::ok();
 }
@@ -239,8 +241,9 @@ ScopedAStatus RadioVoice::getTtyMode(const int32_t serial) {
 
 ScopedAStatus RadioVoice::handleStkCallSetupRequestFromSim(const int32_t serial,
                                                            const bool /*accept*/) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->handleStkCallSetupRequestFromSimResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
@@ -284,16 +287,18 @@ ScopedAStatus RadioVoice::sendBurstDtmf(const int32_t serial,
                                         const std::string& /*dtmf*/,
                                         const int32_t /*on*/,
                                         const int32_t /*off*/) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->sendBurstDtmfResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::sendCdmaFeatureCode(const int32_t serial,
                                               const std::string& /*fcode*/) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->sendCdmaFeatureCodeResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
@@ -429,6 +434,7 @@ ScopedAStatus RadioVoice::setMute(const int32_t serial,
 
 ScopedAStatus RadioVoice::setPreferredVoicePrivacy(const int32_t serial,
                                                    const bool /*enable*/) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->setPreferredVoicePrivacyResponse(
         makeRadioResponseInfoNOP(serial));
     return ScopedAStatus::ok();
@@ -441,6 +447,7 @@ ScopedAStatus RadioVoice::setTtyMode(const int32_t serial, voice::TtyMode /*mode
 }
 
 ScopedAStatus RadioVoice::setVoNrEnabled(const int32_t serial, const bool enable) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->setVoNrEnabledResponse(
         makeRadioResponseInfo(serial, enable ?
             FAILURE(RadioError::REQUEST_NOT_SUPPORTED) : RadioError::NONE));
@@ -448,15 +455,17 @@ ScopedAStatus RadioVoice::setVoNrEnabled(const int32_t serial, const bool enable
 }
 
 ScopedAStatus RadioVoice::startDtmf(const int32_t serial, const std::string& /*s*/) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->startDtmfResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::stopDtmf(const int32_t serial) {
+    // matches reference-ril.c
     NOT_NULL(mRadioVoiceResponse)->stopDtmfResponse(
-        makeRadioResponseInfoUnsupported(  // matches reference-ril.c
+        makeRadioResponseInfoUnsupported(
             serial, FAILURE_DEBUG_PREFIX, __func__));
     return ScopedAStatus::ok();
 }
