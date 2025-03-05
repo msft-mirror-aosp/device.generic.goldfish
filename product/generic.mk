@@ -240,7 +240,6 @@ endif
 # WiFi: vendor side
 PRODUCT_PACKAGES += \
     mac80211_create_radios \
-    dhcpclient \
     hostapd \
     wpa_supplicant \
 

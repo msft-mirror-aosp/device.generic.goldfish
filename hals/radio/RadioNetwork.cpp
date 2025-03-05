@@ -868,7 +868,7 @@ ScopedAStatus RadioNetwork::setAllowedNetworkTypesBitmap(const int32_t serial,
             ratUtils::modemTechnologyBitmaskFromRadioTechnologyBitmask(networkTypeBitmap);
 
         const std::string request = std::format("AT+CTEC={0:d},\"{1:X}\"",
-            static_cast<int>(currentTech), techBitmask);
+            (1 << static_cast<int>(currentTech)), techBitmask);
         const AtResponsePtr response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {

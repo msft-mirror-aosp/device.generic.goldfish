@@ -54,6 +54,10 @@ struct CmdIdVisitor {
         return "ERROR"sv;
     }
 
+    std::string_view operator()(const AtResponse::RING&) const {
+        return "RING"sv;
+    }
+
     std::string_view operator()(const AtResponse::SmsPrompt&) const {
         return "SmsPrompt"sv;
     }
@@ -188,6 +192,11 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
         { CMD(MBAU),     false },
     };
 #undef CMD
+
+    static constexpr std::string_view kRING = "RING\r"sv;
+    if (str.starts_with(kRING)) {
+        return { int(kRING.size()), AtResponse::make(RING()) };
+    }
 
     static constexpr std::string_view kCMT = "+CMT:"sv;
     if (str.starts_with(kCMT)) {
@@ -765,9 +774,11 @@ AtResponsePtr AtResponse::CSQ::parse(const std::string_view str) {
     switch (n) {
     case 22:
         csq.wcdma_signalStrength = values[14];
+        if (csq.wcdma_signalStrength != kUnknown) {
+            csq.wcdma_rscp = 42;
+            csq.wcdma_ecno = 19;
+        }
         csq.wcdma_bitErrorRate = values[15];
-        csq.wcdma_rscp = 42;
-        csq.wcdma_ecno = 19;
         csq.nr_ssRsrp = values[16];
         csq.nr_ssRsrq = values[17];
         csq.nr_ssSinr = values[18];
@@ -872,7 +883,7 @@ AtResponsePtr AtResponse::CLCC::parse(const std::string_view str) {
         std::string number;
 
         // +CLCC: <index>,<dir>,<state>,<mode>,<mpty>,<number>,<type>\r
-        if (parser.skip("+CLCC").skip(' ')(&index).skip(',')
+        if (parser.skip("+CLCC:").skip(' ')(&index).skip(',')
                   (&dir).skip(',')(&state).skip(',')
                   (&mode).skip(',')(&mpty).skip(',')
                   (&number, ',')(&type).skip(kCR).matchSoFar()) {
