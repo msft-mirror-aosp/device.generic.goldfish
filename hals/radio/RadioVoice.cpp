@@ -115,8 +115,8 @@ ScopedAStatus RadioVoice::getCallForwardStatus(const int32_t serial,
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const CCFCU* ccfcu = response->get_if<CCFCU>()) {
             callForwardInfos = ccfcu->callForwardInfos;
-        } else if (response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -136,6 +136,7 @@ ScopedAStatus RadioVoice::getCallWaiting(const int32_t serial,
     mAtChannel->queueRequester([this, serial, serviceClass]
                                (const AtChannel::RequestPipe requestPipe) -> bool {
         using CCWA = AtResponse::CCWA;
+        using CmeError = AtResponse::CmeError;
 
         RadioError status = RadioError::NONE;
         bool enable = false;
@@ -147,13 +148,16 @@ ScopedAStatus RadioVoice::getCallWaiting(const int32_t serial,
         const AtResponsePtr response =
             mAtConversation(requestPipe, atCmds::getCurrentCalls,
                             [](const AtResponse& response) -> bool {
-                               return response.holds<CCWA>();
+                               return response.holds<CCWA>() ||
+                                      response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const CCWA* ccwa = response->get_if<CCWA>()) {
             enable = ccwa->enable;
             serviceClassOut = ccwa->serviceClass;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -184,27 +188,31 @@ ScopedAStatus RadioVoice::getCurrentCalls(const int32_t serial) {
     static const char* const kFunc = __func__;
     mAtChannel->queueRequester([this, serial](const AtChannel::RequestPipe requestPipe) -> bool {
         using CLCC = AtResponse::CLCC;
+        using CmeError = AtResponse::CmeError;
 
+        RadioError status = RadioError::NONE;
         std::vector<voice::Call> calls;
 
         const AtResponsePtr response =
             mAtConversation(requestPipe, atCmds::getCurrentCalls,
                             [](const AtResponse& response) -> bool {
-                               return response.holds<CLCC>() || response.isOK();
+                               return response.holds<CLCC>() ||
+                                      response.isOK() ||
+                                      response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
-             NOT_NULL(mRadioVoiceResponse)->getCurrentCallsResponse(
-                    makeRadioResponseInfo(serial, FAILURE(RadioError::INTERNAL_ERR)), {});
-            return false;
+            status = FAILURE(RadioError::INTERNAL_ERR);
         } else if (const CLCC* clcc = response->get_if<CLCC>()) {
             calls = clcc->calls;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
 
         NOT_NULL(mRadioVoiceResponse)->getCurrentCallsResponse(
-            makeRadioResponseInfo(serial), std::move(calls));
-        return true;
+            makeRadioResponseInfo(serial, status), std::move(calls));
+        return status != RadioError::INTERNAL_ERR;
     });
 
     return ScopedAStatus::ok();
@@ -353,8 +361,8 @@ ScopedAStatus RadioVoice::setCallForward(const int32_t serial,
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
-        } else if (response->get_if<CmeError>()) {
-            status = FAILURE(RadioError::GENERIC_FAILURE);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -373,6 +381,8 @@ ScopedAStatus RadioVoice::setCallWaiting(const int32_t serial,
     static const char* const kFunc = __func__;
     mAtChannel->queueRequester([this, serial, enable, serviceClass]
                                (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CmeError = AtResponse::CmeError;
+
         RadioError status = RadioError::NONE;
 
         const std::string request =
@@ -381,10 +391,13 @@ ScopedAStatus RadioVoice::setCallWaiting(const int32_t serial,
         const AtResponsePtr response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
-                               return response.isOK();
+                               return response.isOK() ||
+                                      response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
@@ -402,6 +415,8 @@ ScopedAStatus RadioVoice::setClir(const int32_t serial, const int32_t clirStatus
     static const char* const kFunc = __func__;
     mAtChannel->queueRequester([this, serial, clirStatus]
                                (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CmeError = AtResponse::CmeError;
+
         RadioError status = RadioError::NONE;
 
         const std::string request = std::format("AT+CLIR: {0:d}", clirStatus);
@@ -412,6 +427,8 @@ ScopedAStatus RadioVoice::setClir(const int32_t serial, const int32_t clirStatus
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
         } else if (!response->isOK()) {
             response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
         }
