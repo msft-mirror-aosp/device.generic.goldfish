@@ -32,51 +32,186 @@ RadioVoice::RadioVoice(std::shared_ptr<AtChannel> atChannel) : mAtChannel(std::m
 }
 
 ScopedAStatus RadioVoice::acceptCall(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->acceptCallResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::acceptCall);
+        NOT_NULL(mRadioVoiceResponse)->acceptCallResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::cancelPendingUssd(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->cancelPendingUssdResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::cancelUssd);
+        NOT_NULL(mRadioVoiceResponse)->cancelPendingUssdResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::conference(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->conferenceResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::conference);
+        NOT_NULL(mRadioVoiceResponse)->conferenceResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::dial(const int32_t serial,
-                               const voice::Dial& /*dialInfo*/) {
-    NOT_NULL(mRadioVoiceResponse)->dialResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                               const voice::Dial& dialInfo) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, dialInfo]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using namespace std::literals;
+        using CmeError = AtResponse::CmeError;
+        using voice::Dial;
+
+        RadioError status = RadioError::NONE;
+
+        std::string_view clir;
+        switch (dialInfo.clir) {
+        case Dial::CLIR_INVOCATION:
+            clir = "I"sv;
+            break;
+        case Dial::CLIR_SUPPRESSION:
+            clir = "i"sv;
+            break;
+        default:
+        case Dial::CLIR_DEFAULT:
+            // clir is the empty string
+            break;
+        }
+
+        const std::string request = std::format("ATD{0:s}{1:s};",
+            dialInfo.address, clir);
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, request,
+                            [](const AtResponse& response) -> bool {
+                               return response.isOK() || response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+            status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else if (!response->isOK()) {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->dialResponse(
+            makeRadioResponseInfo(serial, status));
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::emergencyDial(const int32_t serial,
-                                        const voice::Dial& /*dialInfo*/,
-                                        const int32_t /*categories*/,
+                                        const voice::Dial& dialInfo,
+                                        const int32_t categories,
                                         const std::vector<std::string>& /*urns*/,
-                                        const voice::EmergencyCallRouting /*routing*/,
+                                        const voice::EmergencyCallRouting routing,
                                         const bool /*hasKnownUserIntentEmergency*/,
                                         const bool /*isTesting*/) {
-    NOT_NULL(mRadioVoiceResponse)->emergencyDialResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, dialInfo, categories, routing]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using namespace std::literals;
+        using CmeError = AtResponse::CmeError;
+        using voice::Dial;
+        using voice::EmergencyCallRouting;
+
+        RadioError status = RadioError::NONE;
+
+        std::string_view clir;
+        switch (dialInfo.clir) {
+        case Dial::CLIR_INVOCATION:
+            clir = "I"sv;
+            break;
+        case Dial::CLIR_SUPPRESSION:
+            clir = "i"sv;
+            break;
+        default:
+        case Dial::CLIR_DEFAULT:
+            // clir is the empty string
+            break;
+        }
+
+        std::string request;
+        switch (routing) {
+        case EmergencyCallRouting::EMERGENCY:
+        case EmergencyCallRouting::UNKNOWN:
+            if (categories) {
+                request = std::format("ATD{0:s}@{1:d},#{2:s};",
+                                      dialInfo.address, categories, clir);
+            } else {
+                request = std::format("ATD{0:s}@,#{1:s};", dialInfo.address, clir);
+            }
+            break;
+
+        default:
+        case EmergencyCallRouting::NORMAL:
+            request = std::format("ATD{0:s}{1:s};", dialInfo.address, clir);
+            break;
+        }
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, request,
+                            [](const AtResponse& response) -> bool {
+                               return response.isOK() || response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+            status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else if (!response->isOK()) {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->emergencyDialResponse(
+            makeRadioResponseInfo(serial, status));
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::exitEmergencyCallbackMode(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->exitEmergencyCallbackModeResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CmeError = AtResponse::CmeError;
+
+        RadioError status = RadioError::NONE;
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, atCmds::exitEmergencyMode,
+                            [](const AtResponse& response) -> bool {
+                               return response.isOK() || response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+            status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else if (!response->isOK()) {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->exitEmergencyCallbackModeResponse(
+            makeRadioResponseInfo(serial, status));
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -171,16 +306,73 @@ ScopedAStatus RadioVoice::getCallWaiting(const int32_t serial,
 }
 
 ScopedAStatus RadioVoice::getClip(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->getClipResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__), {});
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CLIP = AtResponse::CLIP;
+        using CmeError = AtResponse::CmeError;
+        using ClipStatus = voice::ClipStatus;
+
+        RadioError status = RadioError::NONE;
+        ClipStatus clipStatus = ClipStatus::UNKNOWN;
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, atCmds::getClip,
+                            [](const AtResponse& response) -> bool {
+                               return response.holds<CLIP>() ||
+                                      response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+            status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CLIP* clip = response->get_if<CLIP>()) {
+            clipStatus = clip->status;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->getClipResponse(
+            makeRadioResponseInfo(serial, status), clipStatus);
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::getClir(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->getClirResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__), 0, 0);
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CLIR = AtResponse::CLIR;
+        using CmeError = AtResponse::CmeError;
+
+        RadioError status = RadioError::NONE;
+        int n = -1;
+        int m = -1;
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, atCmds::getClir,
+                            [](const AtResponse& response) -> bool {
+                               return response.holds<CLIR>() ||
+                                      response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+            status = FAILURE(RadioError::INTERNAL_ERR);
+        } else if (const CLIR* clir = response->get_if<CLIR>()) {
+            n = clir->n;
+            m = clir->m;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->getClirResponse(
+            makeRadioResponseInfo(serial, status), n, m);
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -227,9 +419,38 @@ ScopedAStatus RadioVoice::getLastCallFailCause(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::getMute(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->getMuteResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__), false);
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial](const AtChannel::RequestPipe requestPipe) -> bool {
+        using CMUT = AtResponse::CMUT;
+        using CmeError = AtResponse::CmeError;
+
+        RadioError status = RadioError::NONE;
+        bool isMuted = false;
+
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, atCmds::getCurrentCalls,
+                            [](const AtResponse& response) -> bool {
+                               return response.holds<CMUT>() ||
+                                      response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+             NOT_NULL(mRadioVoiceResponse)->getCurrentCallsResponse(
+                    makeRadioResponseInfo(serial, FAILURE(RadioError::INTERNAL_ERR)), {});
+            return false;
+        } else if (const CMUT* cmut = response->get_if<CMUT>()) {
+            isMuted = cmut->on;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else if (!response->isOK()) {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+
+        NOT_NULL(mRadioVoiceResponse)->getMuteResponse(
+            makeRadioResponseInfo(serial, status), isMuted);
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -257,24 +478,40 @@ ScopedAStatus RadioVoice::handleStkCallSetupRequestFromSim(const int32_t serial,
 }
 
 ScopedAStatus RadioVoice::hangup(const int32_t serial,
-                                 const int32_t /*gsmIndex*/) {
-    NOT_NULL(mRadioVoiceResponse)->hangupConnectionResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                                 const int32_t gsmIndex) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, gsmIndex]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(std::format("AT+CHLD=1{0:d}", gsmIndex));
+        NOT_NULL(mRadioVoiceResponse)->hangupConnectionResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::hangupForegroundResumeBackground(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->hangupForegroundResumeBackgroundResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::hangupForeground);
+        NOT_NULL(mRadioVoiceResponse)->hangupForegroundResumeBackgroundResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::hangupWaitingOrBackground(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->hangupWaitingOrBackgroundResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::hangupWaiting);
+        NOT_NULL(mRadioVoiceResponse)->hangupWaitingOrBackgroundResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -285,9 +522,14 @@ ScopedAStatus RadioVoice::isVoNrEnabled(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::rejectCall(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->rejectCallResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::rejectCall);
+        NOT_NULL(mRadioVoiceResponse)->rejectCallResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -312,26 +554,50 @@ ScopedAStatus RadioVoice::sendCdmaFeatureCode(const int32_t serial,
 }
 
 ScopedAStatus RadioVoice::sendDtmf(const int32_t serial,
-                                   const std::string& /*s*/) {
-    NOT_NULL(mRadioVoiceResponse)->sendDtmfResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                                   const std::string& s) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, s]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(std::format("AT+VTS={0:s}", s));
+        NOT_NULL(mRadioVoiceResponse)->sendDtmfResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::sendUssd(const int32_t serial,
-                                   const std::string& /*ussd*/) {
-    NOT_NULL(mRadioVoiceResponse)->sendUssdResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                                   const std::string& ussd) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, ussd]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(std::format("AT+CUSD=1,\"%s\"", ussd));
+        NOT_NULL(mRadioVoiceResponse)->sendUssdResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
 ScopedAStatus RadioVoice::separateConnection(const int32_t serial,
-                                             const int32_t /*gsmIndex*/) {
-    NOT_NULL(mRadioVoiceResponse)->separateConnectionResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                                             const int32_t gsmIndex) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, gsmIndex]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        if ((gsmIndex > 0) && (gsmIndex < 10)) {
+            requestPipe(std::format("AT+CHLD=2{0:d}", gsmIndex));
+            NOT_NULL(mRadioVoiceResponse)->separateConnectionResponse(
+                makeRadioResponseInfo(serial));
+        } else {
+            NOT_NULL(mRadioVoiceResponse)->separateConnectionResponse(
+                makeRadioResponseInfo(serial, FAILURE(RadioError::GENERIC_FAILURE)));
+        }
+
+        return true;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -423,7 +689,8 @@ ScopedAStatus RadioVoice::setClir(const int32_t serial, const int32_t clirStatus
         const AtResponsePtr response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
-                               return response.isOK();
+                               return response.isOK() ||
+                                      response.holds<CmeError>();
                             });
         if (!response || response->isParseError()) {
             status = FAILURE(RadioError::INTERNAL_ERR);
@@ -442,10 +709,36 @@ ScopedAStatus RadioVoice::setClir(const int32_t serial, const int32_t clirStatus
 }
 
 ScopedAStatus RadioVoice::setMute(const int32_t serial,
-                                  const bool /*enable*/) {
-    NOT_NULL(mRadioVoiceResponse)->setMuteResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+                                  const bool enable) {
+    static const char* const kFunc = __func__;
+    mAtChannel->queueRequester([this, serial, enable]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        using CmeError = AtResponse::CmeError;
+        RadioError status = RadioError::NONE;
+
+        const std::string request =
+            std::format("AT+CMUT={0:d}", (enable ? 1 : 0));
+        const AtResponsePtr response =
+            mAtConversation(requestPipe, request,
+                            [](const AtResponse& response) -> bool {
+                               return response.isOK() ||
+                                      response.holds<CmeError>();
+                            });
+        if (!response || response->isParseError()) {
+             NOT_NULL(mRadioVoiceResponse)->getCurrentCallsResponse(
+                    makeRadioResponseInfo(serial, FAILURE(RadioError::INTERNAL_ERR)), {});
+            return false;
+        } else if (const CmeError* cmeError = response->get_if<CmeError>()) {
+            status = cmeError->getErrorAndLog(FAILURE_DEBUG_PREFIX, kFunc, __LINE__);
+        } else if (!response->isOK()) {
+            response->unexpected(FAILURE_DEBUG_PREFIX, kFunc);
+        }
+
+        NOT_NULL(mRadioVoiceResponse)->setMuteResponse(
+            makeRadioResponseInfo(serial, status));
+        return status != RadioError::INTERNAL_ERR;
+    });
+
     return ScopedAStatus::ok();
 }
 
@@ -488,9 +781,13 @@ ScopedAStatus RadioVoice::stopDtmf(const int32_t serial) {
 }
 
 ScopedAStatus RadioVoice::switchWaitingOrHoldingAndActive(const int32_t serial) {
-    NOT_NULL(mRadioVoiceResponse)->switchWaitingOrHoldingAndActiveResponse(
-        makeRadioResponseInfoUnsupported(  // <TODO>
-            serial, FAILURE_DEBUG_PREFIX, __func__));
+    mAtChannel->queueRequester([this, serial]
+                               (const AtChannel::RequestPipe requestPipe) -> bool {
+        requestPipe(atCmds::switchWaiting);
+        NOT_NULL(mRadioVoiceResponse)->switchWaitingOrHoldingAndActiveResponse(
+            makeRadioResponseInfo(serial));
+        return true;
+    });
     return ScopedAStatus::ok();
 }
 
@@ -504,6 +801,18 @@ void RadioVoice::handleUnsolicited(const AtResponse::RING&) {
     if (mRadioVoiceIndication) {
         mRadioVoiceIndication->callRing(RadioIndicationType::UNSOLICITED, true, {});
         mRadioVoiceIndication->callStateChanged(RadioIndicationType::UNSOLICITED);
+    }
+}
+
+void RadioVoice::handleUnsolicited(const AtResponse::WSOS& wsos) {
+    if (mRadioVoiceIndication) {
+        if (wsos.isEmergencyMode) {
+            mRadioVoiceIndication->enterEmergencyCallbackMode(
+                RadioIndicationType::UNSOLICITED);
+        } else {
+            mRadioVoiceIndication->exitEmergencyCallbackMode(
+                RadioIndicationType::UNSOLICITED);
+        }
     }
 }
 
