@@ -106,7 +106,7 @@ ScopedAStatus RadioVoice::getCallForwardStatus(const int32_t serial,
         const AtResponsePtr response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
-                               return response.holds<CCFCU>();
+                               return response.holds<CCFCU>() ||
                                       response.isOK() ||
                                       response.holds<CmeError>();
                             });
