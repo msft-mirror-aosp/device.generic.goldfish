@@ -280,7 +280,7 @@ failed:     releaseId(cid);
         SetupDataCallResult setupDataCallResult = {
             .suggestedRetryTime = -1,
             .cid = cid,
-            .active = SetupDataCallResult::DATA_CONNECTION_STATUS_INACTIVE,
+            .active = SetupDataCallResult::DATA_CONNECTION_STATUS_ACTIVE,
             .type = dataProfileInfo.protocol,
             .ifname = kInterfaceName,
             .mtuV4 = 1500,
