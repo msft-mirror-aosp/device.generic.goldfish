@@ -603,7 +603,7 @@ std::optional<ratUtils::ModemTechnology> AtResponse::CTEC::getCurrentModemTechno
 
     if ((values.size() == 0) || (values.size() > 2) ||
             ((values.size() == 1) && (values[0] == "DONE"))) {
-        return FAILURE(std::nullopt);
+        return std::nullopt;
     }
 
     int mtech;
