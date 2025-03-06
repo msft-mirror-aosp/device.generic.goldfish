@@ -337,6 +337,9 @@ failed:     releaseId(cid);
 
         NOT_NULL(mRadioDataResponse)->setupDataCallResponse(
             makeRadioResponseInfo(serial), std::move(setupDataCallResult));
+
+        NOT_NULL(mRadioDataIndication)->dataCallListChanged(
+            RadioIndicationType::UNSOLICITED, getDataCalls());
         return true;
     });
 
@@ -368,6 +371,9 @@ ScopedAStatus RadioData::deactivateDataCall(
     if (removed) {
         NOT_NULL(mRadioDataResponse)->deactivateDataCallResponse(
             makeRadioResponseInfo(serial));
+
+        NOT_NULL(mRadioDataIndication)->dataCallListChanged(
+            RadioIndicationType::UNSOLICITED, getDataCalls());
     } else {
         NOT_NULL(mRadioDataResponse)->deactivateDataCallResponse(
             makeRadioResponseInfo(serial, FAILURE(RadioError::INVALID_ARGUMENTS)));
