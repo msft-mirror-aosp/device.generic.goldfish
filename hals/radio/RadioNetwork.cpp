@@ -201,14 +201,13 @@ CellIdentityResult getCellIdentityImpl(OperatorInfo operatorInfo,
                                                                 areaCode, cellId));
         break;
     case ModemTechnology::WCDMA:
+    case ModemTechnology::EVDO:
         cellIdentity.set<CellIdentity::wcdma>(makeCellIdentityWcdma(std::move(operatorInfo),
                                                                     areaCode, cellId));
         break;
     case ModemTechnology::CDMA:
         cellIdentity.set<CellIdentity::cdma>(makeCellIdentityCdma(std::move(operatorInfo)));
         break;
-    case ModemTechnology::EVDO:
-        return {FAILURE_V(RadioError::INTERNAL_ERR, "%s", "EVDO"), {}};
     case ModemTechnology::TDSCDMA:
         cellIdentity.set<CellIdentity::tdscdma>(makeCellIdentityTdscdma(std::move(operatorInfo),
                                                                         areaCode, cellId));

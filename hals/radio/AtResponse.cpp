@@ -175,6 +175,10 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
         { CMD(CLCK),        false },
         { CMD(CSIM),        false },
         { CMD(CCHC),        false },
+        { CMD(CLIP),        false },
+        { CMD(CLIR),        false },
+        { CMD(CMUT),        false },
+        { CMD(WSOS),        false },
         { CMD(CSCA),        false },
         { CMD(CSCB),        false },
         { CMD(CMGS),        false },
@@ -1094,6 +1098,72 @@ AtResponsePtr AtResponse::CGLA::parse(const std::string_view str) {
 #define FAILURE_DEBUG_PREFIX "CCHC"
 AtResponsePtr AtResponse::CCHC::parse(const std::string_view) {
     return make(CCHC());
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CLIP"
+AtResponsePtr AtResponse::CLIP::parse(const std::string_view str) {
+    int enable;
+    int status;
+
+    Parser parser(str);
+    if (parser(&enable).skip(',')(&status).fullMatch()) {
+        CLIP clip;
+        clip.enable = enable != 0;
+        clip.status = static_cast<voice::ClipStatus>(status);
+
+        return make(std::move(clip));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CLIP>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CLIR"
+AtResponsePtr AtResponse::CLIR::parse(const std::string_view str) {
+    CLIR clir;
+    Parser parser(str);
+    if (parser(&clir.n).skip(',')(&clir.m).fullMatch()) {
+        return make(std::move(clir));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CLIR>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CMUT"
+AtResponsePtr AtResponse::CMUT::parse(const std::string_view str) {
+    int on;
+    Parser parser(str);
+    if (parser(&on).fullMatch()) {
+        CMUT cmut;
+        cmut.on = (on != 0);
+        return make(std::move(cmut));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CMUT>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "WSOS"
+AtResponsePtr AtResponse::WSOS::parse(const std::string_view str) {
+    int isEmergencyMode;
+    Parser parser(str);
+    if (parser(&isEmergencyMode).fullMatch()) {
+        WSOS wsos;
+        wsos.isEmergencyMode = (isEmergencyMode != 0);
+        return make(std::move(wsos));
+    } else {
+        return FAILURE_V(makeParseErrorFor<WSOS>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
 }
 
 #undef FAILURE_DEBUG_PREFIX
