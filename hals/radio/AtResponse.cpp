@@ -94,12 +94,15 @@ AtResponse::ParseResult parseCmds(const std::string_view str,
                                   const ValueParser* vp,
                                   const ValueParser* const vpEnd) {
     const std::string_view str1 = str.substr(1);  // skip + or %
-    bool maybeIncomplete = false;
+    if (str1.empty()) {
+        return { 0, nullptr };
+    }
 
+    bool maybeIncomplete = false;
     for (; vp != vpEnd; ++vp) {
         const std::string_view& cmd = vp->cmd;
 
-        if (str1.starts_with(cmd)) {
+        if (str1.starts_with(cmd.substr(0, str1.size()))) {
             size_t skipSize;
             std::string_view payload;
 
