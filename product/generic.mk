@@ -258,7 +258,6 @@ PRODUCT_PACKAGES += \
     android.hardware.lights-service.example \
     com.android.hardware.neuralnetworks \
     com.android.hardware.power \
-    com.android.hardware.rebootescrow \
     com.android.hardware.thermal \
     com.android.hardware.vibrator
 
@@ -268,6 +267,10 @@ ifneq ($(PRODUCT_IS_ATV_SDK),true)
         android.hardware.identity-service.example
 endif
 
+ifneq ($(EMULATOR_VENDOR_NO_REBOOT_ESCROW),true)
+PRODUCT_PACKAGES += \
+    com.android.hardware.rebootescrow
+endif
 
 ifeq (,$(filter %_arm64,$(TARGET_PRODUCT)))  # TARGET_ARCH is not available here
 CODECS_PERFORMANCE_C2_PROFILE := codecs_performance_c2.xml
