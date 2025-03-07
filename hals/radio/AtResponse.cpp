@@ -354,7 +354,7 @@ AtResponsePtr AtResponse::CPINR::parse(const std::string_view str) {
     std::string_view unused;
     if (!parser(&unused, ',')
                (&cpinr.remainingRetryTimes).skip(',')
-               (&cpinr.maxRetryTimes).skip(',').fullMatch()) {
+               (&cpinr.maxRetryTimes).fullMatch()) {
         return FAILURE_V(makeParseErrorFor<CPINR>(),
                          "Can't parse: '%*.*s'",
                          int(str.size()), int(str.size()), str.data());
@@ -929,7 +929,7 @@ AtResponsePtr AtResponse::CCFCU::parse(const std::string_view str) {
             switch (parser.front()) {
             case ',':
                 if (!parser.skip(',')(&ignore, ',')(&ignore, ',')
-                          (&ignore, ',')(&cfi.timeSeconds).skip(kCR).matchSoFar()) {
+                          (&cfi.timeSeconds).skip(kCR).matchSoFar()) {
                     return FAILURE_V(makeParseErrorFor<CCFCU>(),
                                      "Can't parse '%*.*s'",
                                      int(str.size()), int(str.size()), str.data());

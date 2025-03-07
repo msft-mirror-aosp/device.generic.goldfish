@@ -281,7 +281,7 @@ ScopedAStatus RadioVoice::getCallWaiting(const int32_t serial,
             std::format("AT+CCWA={0:d},{1:d},{2:d}",
                         1, 2, serviceClass);
         const AtResponsePtr response =
-            mAtConversation(requestPipe, atCmds::getCurrentCalls,
+            mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {
                                return response.holds<CCWA>() ||
                                       response.holds<CmeError>();
