@@ -201,14 +201,13 @@ CellIdentityResult getCellIdentityImpl(OperatorInfo operatorInfo,
                                                                 areaCode, cellId));
         break;
     case ModemTechnology::WCDMA:
+    case ModemTechnology::EVDO:
         cellIdentity.set<CellIdentity::wcdma>(makeCellIdentityWcdma(std::move(operatorInfo),
                                                                     areaCode, cellId));
         break;
     case ModemTechnology::CDMA:
         cellIdentity.set<CellIdentity::cdma>(makeCellIdentityCdma(std::move(operatorInfo)));
         break;
-    case ModemTechnology::EVDO:
-        return {FAILURE_V(RadioError::INTERNAL_ERR, "%s", "EVDO"), {}};
     case ModemTechnology::TDSCDMA:
         cellIdentity.set<CellIdentity::tdscdma>(makeCellIdentityTdscdma(std::move(operatorInfo),
                                                                         areaCode, cellId));
@@ -868,7 +867,7 @@ ScopedAStatus RadioNetwork::setAllowedNetworkTypesBitmap(const int32_t serial,
             ratUtils::modemTechnologyBitmaskFromRadioTechnologyBitmask(networkTypeBitmap);
 
         const std::string request = std::format("AT+CTEC={0:d},\"{1:X}\"",
-            static_cast<int>(currentTech), techBitmask);
+            (1 << static_cast<int>(currentTech)), techBitmask);
         const AtResponsePtr response =
             mAtConversation(requestPipe, request,
                             [](const AtResponse& response) -> bool {

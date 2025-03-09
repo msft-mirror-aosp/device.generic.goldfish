@@ -78,6 +78,8 @@ struct RadioVoice : public voice::BnRadioVoice {
     ScopedAStatus switchWaitingOrHoldingAndActive(int32_t serial) override;
 
     void atResponseSink(const AtResponsePtr& response);
+    void handleUnsolicited(const AtResponse::RING&);
+    void handleUnsolicited(const AtResponse::WSOS&);
     template <class IGNORE> void handleUnsolicited(const IGNORE&) {}
 
     ScopedAStatus responseAcknowledgement() override;
