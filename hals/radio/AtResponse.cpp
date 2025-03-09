@@ -54,6 +54,10 @@ struct CmdIdVisitor {
         return "ERROR"sv;
     }
 
+    std::string_view operator()(const AtResponse::RING&) const {
+        return "RING"sv;
+    }
+
     std::string_view operator()(const AtResponse::SmsPrompt&) const {
         return "SmsPrompt"sv;
     }
@@ -171,6 +175,10 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
         { CMD(CLCK),        false },
         { CMD(CSIM),        false },
         { CMD(CCHC),        false },
+        { CMD(CLIP),        false },
+        { CMD(CLIR),        false },
+        { CMD(CMUT),        false },
+        { CMD(WSOS),        false },
         { CMD(CSCA),        false },
         { CMD(CSCB),        false },
         { CMD(CMGS),        false },
@@ -188,6 +196,11 @@ AtResponse::ParseResult AtResponse::parse(const std::string_view str) {
         { CMD(MBAU),     false },
     };
 #undef CMD
+
+    static constexpr std::string_view kRING = "RING\r"sv;
+    if (str.starts_with(kRING)) {
+        return { int(kRING.size()), AtResponse::make(RING()) };
+    }
 
     static constexpr std::string_view kCMT = "+CMT:"sv;
     if (str.starts_with(kCMT)) {
@@ -765,9 +778,11 @@ AtResponsePtr AtResponse::CSQ::parse(const std::string_view str) {
     switch (n) {
     case 22:
         csq.wcdma_signalStrength = values[14];
+        if (csq.wcdma_signalStrength != kUnknown) {
+            csq.wcdma_rscp = 42;
+            csq.wcdma_ecno = 19;
+        }
         csq.wcdma_bitErrorRate = values[15];
-        csq.wcdma_rscp = 42;
-        csq.wcdma_ecno = 19;
         csq.nr_ssRsrp = values[16];
         csq.nr_ssRsrq = values[17];
         csq.nr_ssSinr = values[18];
@@ -872,7 +887,7 @@ AtResponsePtr AtResponse::CLCC::parse(const std::string_view str) {
         std::string number;
 
         // +CLCC: <index>,<dir>,<state>,<mode>,<mpty>,<number>,<type>\r
-        if (parser.skip("+CLCC").skip(' ')(&index).skip(',')
+        if (parser.skip("+CLCC:").skip(' ')(&index).skip(',')
                   (&dir).skip(',')(&state).skip(',')
                   (&mode).skip(',')(&mpty).skip(',')
                   (&number, ',')(&type).skip(kCR).matchSoFar()) {
@@ -1083,6 +1098,72 @@ AtResponsePtr AtResponse::CGLA::parse(const std::string_view str) {
 #define FAILURE_DEBUG_PREFIX "CCHC"
 AtResponsePtr AtResponse::CCHC::parse(const std::string_view) {
     return make(CCHC());
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CLIP"
+AtResponsePtr AtResponse::CLIP::parse(const std::string_view str) {
+    int enable;
+    int status;
+
+    Parser parser(str);
+    if (parser(&enable).skip(',')(&status).fullMatch()) {
+        CLIP clip;
+        clip.enable = enable != 0;
+        clip.status = static_cast<voice::ClipStatus>(status);
+
+        return make(std::move(clip));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CLIP>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CLIR"
+AtResponsePtr AtResponse::CLIR::parse(const std::string_view str) {
+    CLIR clir;
+    Parser parser(str);
+    if (parser(&clir.n).skip(',')(&clir.m).fullMatch()) {
+        return make(std::move(clir));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CLIR>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "CMUT"
+AtResponsePtr AtResponse::CMUT::parse(const std::string_view str) {
+    int on;
+    Parser parser(str);
+    if (parser(&on).fullMatch()) {
+        CMUT cmut;
+        cmut.on = (on != 0);
+        return make(std::move(cmut));
+    } else {
+        return FAILURE_V(makeParseErrorFor<CMUT>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
+}
+
+#undef FAILURE_DEBUG_PREFIX
+#define FAILURE_DEBUG_PREFIX "WSOS"
+AtResponsePtr AtResponse::WSOS::parse(const std::string_view str) {
+    int isEmergencyMode;
+    Parser parser(str);
+    if (parser(&isEmergencyMode).fullMatch()) {
+        WSOS wsos;
+        wsos.isEmergencyMode = (isEmergencyMode != 0);
+        return make(std::move(wsos));
+    } else {
+        return FAILURE_V(makeParseErrorFor<WSOS>(),
+                         "Can't parse '%*.*s'",
+                         int(str.size()), int(str.size()), str.data());
+    }
 }
 
 #undef FAILURE_DEBUG_PREFIX
