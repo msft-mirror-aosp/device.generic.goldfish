@@ -97,7 +97,7 @@ struct AtResponse {
     struct CPINR {
         static constexpr std::string_view id() {
             using namespace std::literals;
-            return "CPIN"sv;
+            return "CPINR"sv;
         }
         static AtResponsePtr parse(std::string_view str);
 
