@@ -458,14 +458,15 @@ struct GoldfishAllocator : public BnAllocator {
         req.height = height;
         req.format = desc.format;
         req.reservedRegionSize = desc.reservedSize;
+        req.imageSizeInBytes = offsetInBytes;
 
         if (needCpuBuffer(usage)) {
-            req.imageSizeInBytes = offsetInBytes;
+            req.needImageAllocation = true;
             req.stride0 = (req.planeSize == 1) ?
                               (req.plane[0].strideInBytes /
                                req.plane[0].sampleIncrementInBytes) : 0;
         } else {
-            req.imageSizeInBytes = 0;   // the image is not allocated
+            req.needImageAllocation = false; // the image is not allocated
             /*
              * b/359874912: the spec does not say how to handle PLANE_LAYOUTS
              * if the CPU buffer is not allocated. Let's not populate them
@@ -554,6 +555,7 @@ private:
         int rcAllocFormat = -1;
         EmulatorFrameworkFormat emuFwkFormat = EmulatorFrameworkFormat::GL_COMPATIBLE;
         uint8_t planeSize = 0;
+        bool needImageAllocation = false;
     };
 
     std::unique_ptr<cb_handle_t>
@@ -564,14 +566,20 @@ private:
         android::base::unique_fd cpuAlocatorFd;
         GoldfishAddressSpaceBlock bufferBits;
         const size_t imageSizeInBytesAligned = align(req.imageSizeInBytes, 16);
+        // All allocations (guest RAM, host GPU memory).
         const size_t totalAllocationSize =
-            imageSizeInBytesAligned + sizeof(CbExternalMetadata) + req.reservedRegionSize;
+                req.imageSizeInBytes + sizeof(CbExternalMetadata) + req.reservedRegionSize +
+                (req.needImageAllocation ? imageSizeInBytesAligned : 0);
+        // The actual allocation size. This is visible to the guest.
+        const size_t mappedImageSize = req.needImageAllocation ? imageSizeInBytesAligned : 0;
+        const size_t totalMappedAllocationSize =
+                mappedImageSize + sizeof(CbExternalMetadata) + req.reservedRegionSize;
 
         {
             GoldfishAddressSpaceHostMemoryAllocator hostMemoryAllocator(hasSharedSlots);
             LOG_ALWAYS_FATAL_IF(!hostMemoryAllocator.is_opened());
 
-            if (hostMemoryAllocator.hostMalloc(&bufferBits, totalAllocationSize)) {
+            if (hostMemoryAllocator.hostMalloc(&bufferBits, totalMappedAllocationSize)) {
                 return FAILURE(nullptr);
             }
 
@@ -579,7 +587,7 @@ private:
 
             CbExternalMetadata& metadata =
                 *reinterpret_cast<CbExternalMetadata*>(
-                    static_cast<char*>(bufferBits.guestPtr()) + imageSizeInBytesAligned);
+                    static_cast<char*>(bufferBits.guestPtr()) + mappedImageSize);
 
             memset(&metadata, 0, sizeof(metadata));
             metadata.magic = CbExternalMetadata::kMagicValue;
@@ -603,6 +611,7 @@ private:
             metadata.height = req.height;
             metadata.glFormat = req.glFormat;
             metadata.glType = req.glType;
+            metadata.totalAllocationSize = totalAllocationSize;
         }
 
         uint32_t hostHandle = 0;
@@ -641,7 +650,7 @@ private:
             }
 
             char bufferValueStr[96];
-            if (req.imageSizeInBytes) {
+            if (mappedImageSize > 0) {
                 snprintf(bufferValueStr, sizeof(bufferValueStr),
                          "{ ptr=%p mappedSize=%zu offset=0x%" PRIX64 " } imageSizeInBytes=%zu",
                          bufferBits.guestPtr(), size_t(bufferBits.size()),
@@ -661,10 +670,9 @@ private:
         auto cb = std::make_unique<cb_handle_t>(
             cpuAlocatorFd.release(), hostHandleRefCountFd.release(), hostHandle,
             req.usage, static_cast<uint32_t>(req.format), req.drmFormat,
-            req.stride0, req.imageSizeInBytes, bufferBits.guestPtr(),
-            bufferBits.size(), bufferBits.offset(),
-            imageSizeInBytesAligned);
-
+            req.stride0,
+            (mappedImageSize > 0) ? req.imageSizeInBytes : 0,
+            bufferBits.guestPtr(), bufferBits.size(), bufferBits.offset(), mappedImageSize);
         bufferBits.release();  // now cb owns it
         return cb;
     }
