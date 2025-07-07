@@ -335,7 +335,6 @@ void MultihalSensors::parseQemuSensorEventLocked(QemuSensorsProtocolState* state
             // Skip if the measurement id is not included.
             parsed = true;
         }
-
      } else if (const char* values = testPrefix(buf, end, "guest-sync", ':')) {
         long long value;
         if ((sscanf(values, "%lld", &value) == 1) && (value >= 0)) {
