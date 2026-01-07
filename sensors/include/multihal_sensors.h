@@ -93,6 +93,7 @@ private:
         float lastHingeAngle1Value = kSensorNoValue;
         float lastHingeAngle2Value = kSensorNoValue;
         float lastHeartRateValue = kSensorNoValue;
+        int headingAzimuthDeg = -1;
         float lastWristTiltMeasurement = -1;
     };
 
