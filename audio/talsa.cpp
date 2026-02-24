@@ -154,7 +154,7 @@ PcmPtr pcmOpen(const unsigned int dev,
     pcm_config.format = PCM_FORMAT_S16_LE;
 
     pcm_t *pcmRaw = ::pcm_open(dev, card,
-                               (isOut ? PCM_OUT : PCM_IN) | PCM_MONOTONIC,
+                               (isOut ? PCM_OUT : PCM_IN) | PCM_MONOTONIC | PCM_NONBLOCK,
                                &pcm_config);
     if (!pcmRaw) {
         ALOGE("%s:%d pcm_open returned nullptr for nChannels=%u sampleRateHz=%zu "
@@ -181,62 +181,6 @@ PcmPtr pcmOpen(const unsigned int dev,
     }
 
     return pcm;
-}
-
-bool pcmRead(pcm_t *pcm, void *data, unsigned int count) {
-    if (!pcm) {
-        return FAILURE(false);
-    }
-
-    int tries = 3;
-    while (true) {
-        --tries;
-        const int r = ::pcm_read(pcm, data, count);
-        switch (-r) {
-        case 0:
-            return true;
-
-        case EIO:
-        case EAGAIN:
-            if (tries > 0) {
-                break;
-            }
-            [[fallthrough]];
-
-        default:
-            ALOGW("%s:%d pcm_read failed with '%s' (%d)",
-                  __func__, __LINE__, ::pcm_get_error(pcm), r);
-            return FAILURE(false);
-        }
-    }
-}
-
-bool pcmWrite(pcm_t *pcm, const void *data, unsigned int count) {
-    if (!pcm) {
-        return FAILURE(false);
-    }
-
-    int tries = 3;
-    while (true) {
-        --tries;
-        const int r = ::pcm_write(pcm, data, count);
-        switch (-r) {
-        case 0:
-            return true;
-
-        case EIO:
-        case EAGAIN:
-            if (tries > 0) {
-                break;
-            }
-            [[fallthrough]];
-
-        default:
-            ALOGW("%s:%d pcm_write failed with '%s' (%d)",
-                  __func__, __LINE__, ::pcm_get_error(pcm), r);
-            return FAILURE(false);
-        }
-    }
 }
 
 Mixer::Mixer(unsigned card): mMixer(mixerGetOrOpen(card)) {}
